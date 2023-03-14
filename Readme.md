@@ -31,7 +31,7 @@ async def get_all_data_federations(
 
 ## Developer Virtual Environment
 To get started with the developemt environment, build a virtual development environment and install all the requirements using:
-`./build/dev_setup.sh`
+`make install`
 
 To activate the virtual development environment on Linux, run:
 `source venv38-sail_dev/bin/activate`
@@ -62,8 +62,25 @@ The static generated redoc html documentatation html file is also available in d
 ```
 pip install git+https://github.com/secureailabs/openapi-python-client.git
 ```
-This will install the openapi-python-client package in your virtual environment. You can now use the package to generate a python client for the api using the generator script in `ApiServices/generated/generator.sh`.
+This will install the openapi-python-client package in your virtual environment. You can now use the package to generate a python client for the api using the generator script in `make generate_client`.
 Make sure to activate the virtual environment before running the generator script and update the IP address in the script to point to the api server.
 
 ## Testing
 <TBD>
+
+## Deployment
+Build the docker image using:
+`make build_image`
+
+Push the docker image to the docker registry using:
+`make push_image`
+Note: export the following values before pushing:
+```
+export AZURE_SUBSCRIPTION_ID="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+export AZURE_TENANT_ID="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+export AZURE_CLIENT_ID="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+export AZURE_CLIENT_SECRET="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+export DOCKER_REGISTRY_NAME="developmentdockerregistry"
+```
+
+

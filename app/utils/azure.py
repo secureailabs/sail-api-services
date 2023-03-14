@@ -33,8 +33,8 @@ from azure.storage.fileshare import FileSasPermissions, generate_file_sas
 from azure.storage.fileshare.aio import ShareDirectoryClient
 from pydantic import BaseModel, Field, StrictStr
 
+from app.models.common import KeyVaultObject
 from app.utils.secrets import get_secret
-from models.common import KeyVaultObject
 
 
 class DeploymentResponse(BaseModel):

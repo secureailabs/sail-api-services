@@ -23,9 +23,9 @@ from app.api.dataset_versions import get_all_dataset_versions
 from app.api.secure_computation_nodes import deprovision_secure_computation_nodes, register_secure_computation_node
 from app.data import operations as data_service
 from app.log import log_message
-from models.authentication import TokenData
-from models.common import PyObjectId
-from models.data_federations import (
+from app.models.authentication import TokenData
+from app.models.common import PyObjectId
+from app.models.data_federations import (
     DataFederationProvision_Db,
     DataFederationProvisionState,
     GetDataFederationProvision,
@@ -33,7 +33,7 @@ from models.data_federations import (
     RegisterDataFederationProvision_In,
     RegisterDataFederationProvision_Out,
 )
-from models.secure_computation_nodes import DatasetInformation, RegisterSecureComputationNode_In
+from app.models.secure_computation_nodes import DatasetInformation, RegisterSecureComputationNode_In
 
 router = APIRouter()
 

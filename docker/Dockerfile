@@ -33,18 +33,18 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /srv/mongodb/db0 && chown -R mongodb:mongodb /srv/mongodb/db0
 RUN mongod --port 27017 --dbpath /srv/mongodb/db0 --replSet rs0 --bind_ip localhost --fork --logpath /var/log/mongod.log
 
-COPY apiservices/requirements.txt /requirements.txt
+COPY docker/requirements.txt /requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY apiservices/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx.conf /etc/nginx/nginx.conf
 
 RUN useradd --system promtail
-COPY apiservices/promtail_local_config.yaml /promtail_local_config.yaml
-COPY apiservices/promtail_linux_amd64 /promtail_linux_amd64
+COPY docker/promtail_local_config.yaml /promtail_local_config.yaml
+COPY docker/promtail_linux_amd64 /promtail_linux_amd64
 
-COPY apiservices/Entrypoint.sh /Entrypoint.sh
+COPY docker/Entrypoint.sh /Entrypoint.sh
 RUN chmod +x /Entrypoint.sh
 
-COPY vm-initializer/vm_initializer.py /vm_initializer.py
+COPY app /app
 
 ENTRYPOINT [ "/Entrypoint.sh" ]

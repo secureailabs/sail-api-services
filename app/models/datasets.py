@@ -17,7 +17,7 @@ from typing import List, Optional
 
 from pydantic import Field, StrictStr
 
-from models.common import BasicObjectInfo, PyObjectId, SailBaseModel, KeyVaultObject
+from app.models.common import BasicObjectInfo, KeyVaultObject, PyObjectId, SailBaseModel
 
 
 class DatasetState(Enum):

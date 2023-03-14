@@ -1,12 +1,8 @@
 # -------------------------------------------------------------------------------
 # Engineering
-# audit.py
+# authentication.py
 # -------------------------------------------------------------------------------
-"""Models used by audit query service"""
-import time
-from typing import Optional, Union
-
-from models.common import SailBaseModel
+"""Models used by authentication services"""
 # -------------------------------------------------------------------------------
 # Copyright (C) 2022 Secure Ai Labs, Inc. All Rights Reserved.
 # Private and Confidential. Internal Use Only.
@@ -17,7 +13,29 @@ from models.common import SailBaseModel
 # -------------------------------------------------------------------------------
 from pydantic import Field, StrictStr
 
+from app.models.accounts import UserRole
+from app.models.common import PyObjectId, SailBaseModel
 
-class QueryResult(SailBaseModel):
-    status: StrictStr = Field(...)
-    data: dict = Field(...)
+
+class LoginSuccess_Out(SailBaseModel):
+    access_token: StrictStr
+    refresh_token: StrictStr
+    token_type: StrictStr
+
+
+class TokenData(SailBaseModel):
+    id: PyObjectId = Field(alias="_id")
+    organization_id: PyObjectId = Field(...)
+    role: UserRole = Field(...)
+    exp: int = Field(...)
+
+
+class RefreshTokenData(SailBaseModel):
+    id: PyObjectId = Field(alias="_id")
+    organization_id: PyObjectId = Field(...)
+    role: UserRole = Field(...)
+    exp: int = Field(...)
+
+
+class RefreshToken_In(SailBaseModel):
+    refresh_token: StrictStr = Field(...)

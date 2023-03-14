@@ -18,8 +18,8 @@ from typing import List, Optional
 
 from pydantic import Field, StrictStr
 
-from models.common import BasicObjectInfo, KeyVaultObject, PyObjectId, SailBaseModel
-from models.secure_computation_nodes import SecureComputationNodeSize
+from app.models.common import BasicObjectInfo, KeyVaultObject, PyObjectId, SailBaseModel
+from app.models.secure_computation_nodes import SecureComputationNodeSize
 
 
 class DataFederationState(Enum):

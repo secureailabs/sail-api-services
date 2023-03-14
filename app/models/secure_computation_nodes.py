@@ -20,7 +20,7 @@ from typing import List, Optional
 from pydantic import Field, StrictStr
 
 from app.api import datasets
-from models.common import BasicObjectInfo, PyObjectId, SailBaseModel
+from app.models.common import BasicObjectInfo, PyObjectId, SailBaseModel
 
 
 class SecureComputationNodeSize(Enum):

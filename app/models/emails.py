@@ -16,7 +16,7 @@ from typing import List
 
 from pydantic import EmailStr, Field, StrictStr
 
-from models.common import SailBaseModel
+from app.models.common import SailBaseModel
 
 
 class EmailRequest(SailBaseModel):

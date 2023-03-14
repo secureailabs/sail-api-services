@@ -24,12 +24,10 @@ from app.api.datasets import get_dataset
 from app.api.internal_utils import cache_get_basic_info_organization
 from app.data import operations as data_service
 from app.log import log_message
-from app.utils.background_couroutines import add_async_task
-from app.utils.secrets import get_secret
-from models.accounts import UserRole
-from models.authentication import TokenData
-from models.common import BasicObjectInfo, PyObjectId
-from models.dataset_versions import (
+from app.models.accounts import UserRole
+from app.models.authentication import TokenData
+from app.models.common import BasicObjectInfo, PyObjectId
+from app.models.dataset_versions import (
     DatasetVersion_Db,
     DatasetVersionState,
     GetDatasetVersion_Out,
@@ -39,7 +37,9 @@ from models.dataset_versions import (
     RegisterDatasetVersion_Out,
     UpdateDatasetVersion_In,
 )
-from models.datasets import DatasetState
+from app.models.datasets import DatasetState
+from app.utils.background_couroutines import add_async_task
+from app.utils.secrets import get_secret
 
 DB_COLLECTION_DATASET_VERSIONS = "dataset-versions"
 

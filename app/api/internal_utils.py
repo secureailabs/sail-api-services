@@ -18,8 +18,8 @@ from fastapi import APIRouter, Response, status
 from app.api.accounts import get_organization
 from app.api.datasets import get_dataset
 from app.data import operations as data_service
-from models.authentication import TokenData
-from models.common import BasicObjectInfo, PyObjectId
+from app.models.authentication import TokenData
+from app.models.common import BasicObjectInfo, PyObjectId
 
 router = APIRouter()
 

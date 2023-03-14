@@ -14,7 +14,8 @@
 import pytest
 from assertpy.assertpy import assert_that
 from cerberus import Validator
-from models.accounts import GetOrganizations_Out, UserInfo_Out
+
+from app.models.accounts import GetOrganizations_Out, UserInfo_Out
 from tests.workflow_tests.api_portal.sail_portal_api import SailPortalApi
 from tests.workflow_tests.config import SAIL_PASS
 from tests.workflow_tests.utils.account_helpers import get_add_user_payload

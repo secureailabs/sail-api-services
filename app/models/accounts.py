@@ -17,7 +17,7 @@ from typing import List, Optional
 
 from pydantic import EmailStr, Field, StrictStr
 
-from models.common import BasicObjectInfo, PyObjectId, SailBaseModel
+from app.models.common import BasicObjectInfo, PyObjectId, SailBaseModel
 
 
 class OrganizationState(Enum):

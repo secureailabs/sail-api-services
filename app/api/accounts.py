@@ -19,7 +19,7 @@ from fastapi.encoders import jsonable_encoder
 from app.api.authentication import RoleChecker, get_current_user, get_password_hash
 from app.data import operations as data_service
 from app.log import log_message
-from models.accounts import (
+from app.models.accounts import (
     GetMultipleOrganizations_Out,
     GetMultipleUsers_Out,
     GetOrganizations_Out,
@@ -36,8 +36,8 @@ from models.accounts import (
     UserAccountState,
     UserRole,
 )
-from models.authentication import TokenData
-from models.common import BasicObjectInfo, PyObjectId
+from app.models.authentication import TokenData
+from app.models.common import BasicObjectInfo, PyObjectId
 
 DB_COLLECTION_ORGANIZATIONS = "organizations"
 DB_COLLECTION_USERS = "users"

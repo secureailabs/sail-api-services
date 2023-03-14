@@ -42,8 +42,8 @@ from app.api import (
 )
 from app.data import operations as data_service
 from app.log import _AsyncLogger, log_message
+from app.models.common import PyObjectId
 from app.utils.secrets import get_secret
-from models.common import PyObjectId
 
 server = FastAPI(
     title="SAIL",

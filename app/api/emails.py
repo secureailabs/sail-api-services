@@ -15,9 +15,10 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from app.utils.secrets import get_secret
 from fastapi import APIRouter, HTTPException, status
-from models.emails import EmailRequest
+
+from app.models.emails import EmailRequest
+from app.utils.secrets import get_secret
 
 router = APIRouter()
 

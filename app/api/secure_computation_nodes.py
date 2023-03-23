@@ -168,11 +168,17 @@ async def get_all_secure_computation_nodes(
                 )
 
             response_secure_computation_node = GetSecureComputationNode_Out(
-                **secure_computation_node.dict(),
+                _id=secure_computation_node.id,
                 data_federation=BasicObjectInfo(id=data_federation.id, name=data_federation.name),
+                datasets=dataset_info,
                 researcher=data_researcher_basic_info,
                 researcher_user=current_user.id,
+                timestamp=secure_computation_node.timestamp,
+                state=secure_computation_node.state,
+                detail=secure_computation_node.detail,
+                ipaddress=secure_computation_node.ipaddress,
             )
+
             response_secure_computation_nodes.append(response_secure_computation_node)
 
     message = f"[Get All Secure Computation Nodes]: user_id:{current_user.id}"
@@ -216,10 +222,6 @@ async def get_secure_computation_node(
         if organization.id == current_user.organization_id
     ][0]
 
-    dataset_basic_info = BasicObjectInfo(id=PyObjectId(empty=True), name="")
-    dataset_version_basic_info = BasicObjectInfo(id=PyObjectId(empty=True), name="")
-    data_owner_basic_info = BasicObjectInfo(id=PyObjectId(empty=True), name="")
-
     dataset_info: List[DatasetBasicInformation] = []
     for dataset in secure_computation_node.datasets:
         # Get the basic information of the dataset
@@ -237,10 +239,15 @@ async def get_secure_computation_node(
         )
 
     response_secure_computation_node = GetSecureComputationNode_Out(
-        **secure_computation_node.dict(),
+        _id=secure_computation_node.id,
         data_federation=BasicObjectInfo(id=data_federation.id, name=data_federation.name),
+        datasets=dataset_info,
         researcher=data_researcher_basic_info,
         researcher_user=current_user.id,
+        timestamp=secure_computation_node.timestamp,
+        state=secure_computation_node.state,
+        detail=secure_computation_node.detail,
+        ipaddress=secure_computation_node.ipaddress,
     )
 
     message = f"[Get Secure Computation Node]: user_id:{current_user.id}, SCN_id: {secure_computation_node_id}"
@@ -269,7 +276,7 @@ async def update_secure_computation_node(
     )
     if not secure_computation_node_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Secure Computation Node not found")
-    secure_computation_node_db = SecureComputationNode_Db(**secure_computation_node_db)  # type: ignore
+    secure_computation_node_db = SecureComputationNode_Db(**secure_computation_node_db)
 
     if secure_computation_node_db.state == SecureComputationNodeState.WAITING_FOR_DATA:
         if updated_secure_computation_node_info.state == SecureComputationNodeState.READY:

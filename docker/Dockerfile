@@ -46,5 +46,7 @@ COPY docker/Entrypoint.sh /Entrypoint.sh
 RUN chmod +x /Entrypoint.sh
 
 COPY app /app
+COPY sailvm.json /sailvm.json
+COPY rpcrelated.tar.gz /rpcrelated.tar.gz
 
 ENTRYPOINT [ "/Entrypoint.sh" ]

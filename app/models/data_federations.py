@@ -156,18 +156,16 @@ class DataFederationProvision_Db(DataFederationProvision_Base):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field(...)
-    smart_broker_id: PyObjectId = Field(...)
+    secure_computation_node_id: PyObjectId = Field(...)
     state: DataFederationProvisionState = Field(...)
-    secure_computation_nodes_id: List[PyObjectId] = Field(default_factory=list)
 
 
 class GetDataFederationProvision(DataFederationProvision_Base):
     id: PyObjectId = Field(alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field(...)
-    smart_broker_id: PyObjectId = Field(...)
+    secure_computation_node_id: PyObjectId = Field(...)
     state: DataFederationProvisionState = Field(...)
-    secure_computation_nodes_id: List[PyObjectId] = Field(default_factory=list)
 
 
 class GetMultipleDataFederationProvision_Out(SailBaseModel):
@@ -182,6 +180,5 @@ class RegisterDataFederationProvision_Out(DataFederationProvision_Base):
     id: PyObjectId = Field(alias="_id")
     creation_time: datetime = Field(...)
     organization_id: PyObjectId = Field(...)
-    smart_broker_id: PyObjectId = Field(...)
+    secure_computation_node_id: PyObjectId = Field(...)
     state: DataFederationProvisionState = Field(...)
-    secure_computation_nodes_id: List[PyObjectId] = Field(...)

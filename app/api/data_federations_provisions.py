@@ -184,9 +184,8 @@ async def provision_data_federation(
         data_federation_id=provision_req.data_federation_id,
         organization_id=current_user.organization_id,
         secure_computation_nodes_size=provision_req.secure_computation_nodes_size,
-        smart_broker_id=PyObjectId(),
+        secure_computation_node_id=PyObjectId(),
         state=DataFederationProvisionState.CREATING,
-        secure_computation_nodes_id=[],
     )
 
     # Get the dataset versions for the data federation
@@ -206,20 +205,20 @@ async def provision_data_federation(
             )
         )
 
-    # Create a smart broker for the data federation provision which is also a SCN
-    register_smart_broker_params = RegisterSecureComputationNode_In(
+    # Create a secure computation node for the data federation provision
+    register_secure_computation_node_params = RegisterSecureComputationNode_In(
         data_federation_id=provision_req.data_federation_id,
         data_federation_provision_id=provision_db.id,
         datasets=dataset_info,
         size=provision_req.secure_computation_nodes_size,
     )
-    smart_broker_response = await register_secure_computation_node(
-        secure_computation_node_req=register_smart_broker_params,
+    secure_computation_node_response = await register_secure_computation_node(
+        secure_computation_node_req=register_secure_computation_node_params,
         current_user=current_user,
     )
 
     # Update the smart broker id
-    provision_db.smart_broker_id = smart_broker_response.id
+    provision_db.secure_computation_node_id = secure_computation_node_response.id
 
     # Add to the database
     await DataFederationProvision.create(provision_db)

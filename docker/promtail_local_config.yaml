@@ -15,4 +15,4 @@ scrape_configs:
       - localhost
     labels:
       job: user_activity
-      __path__: /app/ApiServices/audit.log
+      __path__: /audit.log

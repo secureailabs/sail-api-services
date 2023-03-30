@@ -22,6 +22,7 @@ import fastapi.openapi.utils as utils
 from fastapi import FastAPI, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
@@ -54,6 +55,11 @@ server = FastAPI(
 server.openapi = custom_openapi(server)
 
 
+origins = [
+    "*",
+]
+
+
 class Audit_log_task(threading.Thread):
     """
     Auxillary class for audit log server in isolated thread
@@ -77,6 +83,13 @@ server.include_router(dataset_versions.router)
 server.include_router(secure_computation_nodes.router)
 server.include_router(internal_utils.router)
 
+server.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Override the default validation error handler as it throws away a lot of information
 # about the schema of the request body.

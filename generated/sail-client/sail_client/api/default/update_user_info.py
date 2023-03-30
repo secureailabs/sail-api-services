@@ -85,7 +85,9 @@ def sync_detailed(
 ) -> Response[Union[HTTPExceptionObj, None, ValidationError]]:
     """Update User Info
 
-     Update user information
+     Update user information.
+            Only organization admin can update the user role and account state for a user.
+            Only the account owner can update the job title and avatar.
 
     Args:
         organization_id (str): UUID of the organization
@@ -124,7 +126,9 @@ def sync(
 ) -> Optional[Union[HTTPExceptionObj, None, ValidationError]]:
     """Update User Info
 
-     Update user information
+     Update user information.
+            Only organization admin can update the user role and account state for a user.
+            Only the account owner can update the job title and avatar.
 
     Args:
         organization_id (str): UUID of the organization
@@ -156,7 +160,9 @@ async def asyncio_detailed(
 ) -> Response[Union[HTTPExceptionObj, None, ValidationError]]:
     """Update User Info
 
-     Update user information
+     Update user information.
+            Only organization admin can update the user role and account state for a user.
+            Only the account owner can update the job title and avatar.
 
     Args:
         organization_id (str): UUID of the organization
@@ -193,7 +199,9 @@ async def asyncio(
 ) -> Optional[Union[HTTPExceptionObj, None, ValidationError]]:
     """Update User Info
 
-     Update user information
+     Update user information.
+            Only organization admin can update the user role and account state for a user.
+            Only the account owner can update the job title and avatar.
 
     Args:
         organization_id (str): UUID of the organization

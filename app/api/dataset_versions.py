@@ -113,7 +113,7 @@ async def register_dataset_version(
     operation_id="get_all_dataset_versions",
 )
 async def get_all_dataset_versions(
-    dataset_id: PyObjectId = Body(description="UUID of the dataset"),
+    dataset_id: PyObjectId = Query(description="UUID of the dataset"),
     current_user: TokenData = Depends(get_current_user),
 ) -> GetMultipleDatasetVersion_Out:
     query = {"dataset_id": str(dataset_id)}

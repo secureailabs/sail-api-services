@@ -4,6 +4,7 @@ from .api.default import (
     accept_or_reject_invite,
     add_data_model,
     add_dataset,
+    audit_incidents_query,
     deprovision_data_federation,
     drop_database,
     get_all_data_federation_provision_info,
@@ -44,6 +45,7 @@ from .api.default import (
     soft_delete_dataset_version,
     soft_delete_organization,
     soft_delete_user,
+    unlock_user_account,
     update_data_federation,
     update_dataset,
     update_dataset_version,
@@ -74,6 +76,7 @@ from .models.get_secure_computation_node_out import GetSecureComputationNodeOut
 from .models.get_users_out import GetUsersOut
 from .models.login_success_out import LoginSuccessOut
 from .models.patch_invite_in import PatchInviteIn
+from .models.query_result import QueryResult
 from .models.refresh_token_in import RefreshTokenIn
 from .models.register_data_federation_in import RegisterDataFederationIn
 from .models.register_data_federation_out import RegisterDataFederationOut
@@ -101,6 +104,57 @@ class SyncAuthenticatedOperations:
     def __init__(self, client: AuthenticatedClient) -> None:
         self._client = client
 
+    def audit_incidents_query(
+        self,
+        label: str,
+        user_id: Union[Unset, None, str] = UNSET,
+        data_id: Union[Unset, None, str] = UNSET,
+        start: Union[None, Unset, float, int] = UNSET,
+        end: Union[None, Unset, float, int] = UNSET,
+        limit: Union[Unset, None, int] = UNSET,
+        step: Union[Unset, None, str] = UNSET,
+        direction: Union[Unset, None, str] = UNSET,
+    ) -> QueryResult:
+        """Audit Incidents Query
+
+         query by logQL
+
+        Args:
+            label (str):
+            user_id (Union[Unset, None, str]): query events related to a specific user id
+            data_id (Union[Unset, None, str]): query events related to a specific data id
+            start (Union[None, Unset, float, int]): starting timestamp of the query range
+            end (Union[None, Unset, float, int]): ending timestamp of the query range
+            limit (Union[Unset, None, int]): query events number limit
+            step (Union[Unset, None, str]): query events time interval
+            direction (Union[Unset, None, str]): query events order
+
+        Raises:
+            errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+            httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+        Returns:
+            Response[QueryResult]
+        """
+
+        response = audit_incidents_query.sync(
+            client=self._client,
+            label=label,
+            user_id=user_id,
+            data_id=data_id,
+            start=start,
+            end=end,
+            limit=limit,
+            step=step,
+            direction=direction,
+        )
+
+        if response is None:
+            raise Exception("No response")
+
+        assert isinstance(response, QueryResult)
+        return response
+
     def get_current_user_info(
         self,
     ) -> UserInfoOut:
@@ -125,6 +179,30 @@ class SyncAuthenticatedOperations:
 
         assert isinstance(response, UserInfoOut)
         return response
+
+    def unlock_user_account(
+        self,
+        user_id: str,
+    ) -> None:
+        """Unlock User Account
+
+         Unlock the user account
+
+        Args:
+            user_id (str): The user id to unlock the account for
+
+        Raises:
+            errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+            httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+        Returns:
+            Response[None]
+        """
+
+        unlock_user_account.sync(
+            user_id=user_id,
+            client=self._client,
+        )
 
     def get_all_organizations(
         self,
@@ -336,7 +414,9 @@ class SyncAuthenticatedOperations:
     ) -> None:
         """Update User Info
 
-         Update user information
+         Update user information.
+                Only organization admin can update the user role and account state for a user.
+                Only the account owner can update the job title and avatar.
 
         Args:
             organization_id (str): UUID of the organization
@@ -1139,14 +1219,14 @@ class SyncAuthenticatedOperations:
 
     def get_all_dataset_versions(
         self,
-        json_body: str,
+        dataset_id: str,
     ) -> GetMultipleDatasetVersionOut:
         """Get All Dataset Versions
 
          Get list of all the dataset-versions for the dataset
 
         Args:
-            json_body (str): UUID of the dataset
+            dataset_id (str): UUID of the dataset
 
         Raises:
             errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -1158,7 +1238,7 @@ class SyncAuthenticatedOperations:
 
         response = get_all_dataset_versions.sync(
             client=self._client,
-            json_body=json_body,
+            dataset_id=dataset_id,
         )
 
         if response is None:

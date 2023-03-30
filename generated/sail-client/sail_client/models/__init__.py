@@ -4,7 +4,9 @@ from .add_data_model_data_model import AddDataModelDataModel
 from .basic_object_info import BasicObjectInfo
 from .body_login import BodyLogin
 from .data_federation_data_format import DataFederationDataFormat
+from .data_federation_provision_state import DataFederationProvisionState
 from .data_federation_state import DataFederationState
+from .dataset_basic_information import DatasetBasicInformation
 from .dataset_encryption_key_out import DatasetEncryptionKeyOut
 from .dataset_format import DatasetFormat
 from .dataset_state import DatasetState
@@ -31,6 +33,8 @@ from .invite_state import InviteState
 from .invite_type import InviteType
 from .login_success_out import LoginSuccessOut
 from .patch_invite_in import PatchInviteIn
+from .query_result import QueryResult
+from .query_result_data import QueryResultData
 from .refresh_token_in import RefreshTokenIn
 from .register_data_federation_in import RegisterDataFederationIn
 from .register_data_federation_out import RegisterDataFederationOut
@@ -46,7 +50,6 @@ from .register_user_in import RegisterUserIn
 from .register_user_out import RegisterUserOut
 from .secure_computation_node_size import SecureComputationNodeSize
 from .secure_computation_node_state import SecureComputationNodeState
-from .secure_computation_node_type import SecureComputationNodeType
 from .update_data_federation_in import UpdateDataFederationIn
 from .update_dataset_in import UpdateDatasetIn
 from .update_dataset_version_in import UpdateDatasetVersionIn
@@ -63,7 +66,9 @@ __all__ = (
     "BasicObjectInfo",
     "BodyLogin",
     "DataFederationDataFormat",
+    "DataFederationProvisionState",
     "DataFederationState",
+    "DatasetBasicInformation",
     "DatasetEncryptionKeyOut",
     "DatasetFormat",
     "DatasetState",
@@ -90,6 +95,8 @@ __all__ = (
     "InviteType",
     "LoginSuccessOut",
     "PatchInviteIn",
+    "QueryResult",
+    "QueryResultData",
     "RefreshTokenIn",
     "RegisterDataFederationIn",
     "RegisterDataFederationOut",
@@ -105,7 +112,6 @@ __all__ = (
     "RegisterUserOut",
     "SecureComputationNodeSize",
     "SecureComputationNodeState",
-    "SecureComputationNodeType",
     "UpdateDataFederationIn",
     "UpdateDatasetIn",
     "UpdateDatasetVersionIn",

@@ -36,6 +36,9 @@ from app.api import (
     authentication,
     data_federations,
     data_federations_provisions,
+    data_models,
+    data_models_dataframe,
+    data_models_series,
     dataset_versions,
     datasets,
     internal_utils,
@@ -82,6 +85,9 @@ server.include_router(datasets.router)
 server.include_router(dataset_versions.router)
 server.include_router(secure_computation_nodes.router)
 server.include_router(internal_utils.router)
+server.include_router(data_models.router)
+server.include_router(data_models_dataframe.router)
+server.include_router(data_models_series.router)
 
 server.add_middleware(
     CORSMiddleware,
@@ -90,6 +96,7 @@ server.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Override the default validation error handler as it throws away a lot of information
 # about the schema of the request body.

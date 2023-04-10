@@ -27,41 +27,37 @@ class DataModelSeriesState(Enum):
 
 
 class DataModelSeries_Base(SailBaseModel):
-    data_model_dataframe_id: PyObjectId = Field()
+    name: str = Field()
+    description: str = Field()
+    series_schema: Dict = Field()
 
 
 class DataModelSeries_Db(DataModelSeries_Base):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field()
-    schema: Dict = Field()
     state: DataModelSeriesState = Field()
 
 
-class GetDataModelSeries(DataModelSeries_Base):
+class GetDataModelSeries_Out(DataModelSeries_Base):
     id: PyObjectId = Field(alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field()
-    schema: Dict = Field()
     state: DataModelSeriesState = Field()
 
 
 class GetMultipleDataModelSeries_Out(SailBaseModel):
-    data_model_series: List[GetDataModelSeries] = Field()
+    data_model_series: List[GetDataModelSeries_Out] = Field()
 
 
 class RegisterDataModelSeries_In(DataModelSeries_Base):
     pass
 
 
-class RegisterDataModelSeries_Out(DataModelSeries_Base):
+class RegisterDataModelSeries_Out(SailBaseModel):
     id: PyObjectId = Field(alias="_id")
-    creation_time: datetime = Field()
-    organization_id: PyObjectId = Field()
-    state: DataModelSeriesState = Field()
-    schema: Dict = Field()
 
 
 class UpdateDataModelSeries_In(SailBaseModel):
-    schema: Optional[Dict] = Field(default=None)
+    series_schema: Optional[Dict] = Field(default=None)
     state: Optional[DataModelSeriesState] = Field(default=None)

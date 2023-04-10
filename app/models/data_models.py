@@ -22,52 +22,49 @@ from app.models.common import BasicObjectInfo, PyObjectId, SailBaseModel
 
 
 class DataModelState(Enum):
-    DRAFT = "CREATING"
-    PUBLISHED = "CREATED"
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"
     DELETED = "DELETED"
 
 
 class DataModel_Base(SailBaseModel):
-    data_federation_id: PyObjectId = Field(...)
+    name: str = Field()
+    description: str = Field()
 
 
 class DataModel_Db(DataModel_Base):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field(...)
-    dataframes: List[PyObjectId] = Field(...)
+    data_model_dataframes: List[PyObjectId] = Field(...)
     state: DataModelState = Field(...)
 
 
-class GetDataModel(DataModel_Base):
+class GetDataModel_Out(DataModel_Base):
     id: PyObjectId = Field(alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field(...)
-    dataframes: List[BasicObjectInfo] = Field(...)
+    data_model_dataframes: List[BasicObjectInfo] = Field(...)
     state: DataModelState = Field(...)
 
 
 class GetMultipleDataModel_Out(SailBaseModel):
-    data_models: List[GetDataModel] = Field(...)
+    data_models: List[GetDataModel_Out] = Field(...)
 
 
 class RegisterDataModel_In(DataModel_Base):
     pass
 
 
-class RegisterDataModel_Out(DataModel_Base):
+class RegisterDataModel_Out(SailBaseModel):
     id: PyObjectId = Field(alias="_id")
-    creation_time: datetime = Field(...)
-    organization_id: PyObjectId = Field(...)
-    dataframes: List[BasicObjectInfo] = Field(...)
-    state: DataModelState = Field(...)
 
 
 class UpdateDataModel_In(SailBaseModel):
     data_model_dataframe_to_add: Optional[List[PyObjectId]] = Field(
-        description="The dataframes to add to the data model"
+        description="The data_model_dataframes to add to the data model"
     )
     data_model_dataframe_to_remove: Optional[List[PyObjectId]] = Field(
-        description="The dataframes to remove from the data model"
+        description="The data_model_dataframes to remove from the data model"
     )
     state: Optional[DataModelState] = Field(description="The state of the data model")

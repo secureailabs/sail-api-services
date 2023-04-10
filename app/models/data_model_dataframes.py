@@ -27,39 +27,36 @@ class DataModelDataframeState(Enum):
 
 
 class DataModelDataframe_Base(SailBaseModel):
-    data_federation_id: PyObjectId = Field()
+    name: str = Field()
+    description: str = Field()
 
 
 class DataModelDataframe_Db(DataModelDataframe_Base):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field()
-    series: List[PyObjectId] = Field()
+    data_model_series: List[PyObjectId] = Field()
     state: DataModelDataframeState = Field()
 
 
-class GetDataModelDataframe(DataModelDataframe_Base):
+class GetDataModelDataframe_Out(DataModelDataframe_Base):
     id: PyObjectId = Field(alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field()
-    series: List[BasicObjectInfo] = Field()
+    data_model_series: List[BasicObjectInfo] = Field()
     state: DataModelDataframeState = Field()
 
 
 class GetMultipleDataModelDataframe_Out(SailBaseModel):
-    data_model_dataframes: List[GetDataModelDataframe] = Field()
+    data_model_dataframes: List[GetDataModelDataframe_Out] = Field()
 
 
 class RegisterDataModelDataframe_In(DataModelDataframe_Base):
     pass
 
 
-class RegisterDataModelDataframe_Out(DataModelDataframe_Base):
+class RegisterDataModelDataframe_Out(SailBaseModel):
     id: PyObjectId = Field(alias="_id")
-    creation_time: datetime = Field()
-    organization_id: PyObjectId = Field()
-    series: List[BasicObjectInfo] = Field()
-    state: DataModelDataframeState = Field()
 
 
 class UpdateDataModelDataframe_In(SailBaseModel):

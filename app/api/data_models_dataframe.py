@@ -26,7 +26,7 @@ from app.models.common import PyObjectId
 from app.models.data_model_dataframes import (
     DataModelDataframe_Db,
     DataModelDataframeState,
-    GetDataModelDataframe,
+    GetDataModelDataframe_Out,
     GetMultipleDataModelDataframe_Out,
     RegisterDataModelDataframe_In,
     RegisterDataModelDataframe_Out,
@@ -64,7 +64,6 @@ class DataModelDataframe:
     async def read(
         organization_id: Optional[PyObjectId] = None,
         data_model_dataframe_id: Optional[PyObjectId] = None,
-        data_model_id: Optional[PyObjectId] = None,
         throw_on_not_found: bool = True,
     ) -> List[DataModelDataframe_Db]:
         """
@@ -83,8 +82,6 @@ class DataModelDataframe:
             query["_id"] = data_model_dataframe_id
         if organization_id:
             query["organization_id"] = organization_id
-        if data_model_id:
-            query["data_model_id"] = data_model_id
         if not query:
             raise Exception("Invalid query")
 
@@ -127,9 +124,9 @@ class DataModelDataframe:
         if state:
             update_request["$set"] = {"state": state}
         if data_model_series_to_add:
-            update_request["$push"] = {"data_model_series": {"$each": data_model_series_to_add}}
+            update_request["$push"] = {"data_model_series": {"$each": list(map(str, data_model_series_to_add))}}
         if data_model_series_to_remove:
-            update_request["$pull"] = {"data_model_series": {"$in": data_model_series_to_remove}}
+            update_request["$pull"] = {"data_model_series": {"$in": list(map(str, data_model_series_to_remove))}}
 
         if not update_request:
             raise Exception("Invalid update request")
@@ -142,7 +139,7 @@ class DataModelDataframe:
 
 
 @router.post(
-    path="/data-models",
+    path="/data-models-dataframes",
     description="Provision data federation SCNs",
     response_description="Data model dataframe Id and list of SCNs",
     response_model=RegisterDataModelDataframe_Out,
@@ -167,18 +164,12 @@ async def register_data_model_dataframe(
     :return: Data model dataframe Id
     :rtype: RegisterDataModelDataframe_Out
     """
-    # Current user organization must be one of the the data federation researcher
-    data_federation_db = await get_data_federation(
-        data_federation_id=data_model_dataframe_req.data_federation_id, current_user=current_user
-    )
-    if not data_federation_db:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Data Federation not found")
-
     # Create a new provision object
     data_model_dataframe_db = DataModelDataframe_Db(
-        data_federation_id=data_model_dataframe_req.data_federation_id,
+        name=data_model_dataframe_req.name,
+        description=data_model_dataframe_req.description,
         organization_id=current_user.organization_id,
-        series=[],
+        data_model_series=[],
         state=DataModelDataframeState.ACTIVE,
     )
 
@@ -194,17 +185,17 @@ async def register_data_model_dataframe(
 
 
 @router.get(
-    path="/data-models/{data_model_dataframe_id}",
+    path="/data-models-dataframes/{data_model_dataframe_id}",
     description="Get data model dataframe",
     response_description="Data model dataframe information and list of SCNs",
-    response_model=GetDataModelDataframe,
+    response_model=GetDataModelDataframe_Out,
     status_code=status.HTTP_200_OK,
     operation_id="get_data_model_dataframe_info",
 )
 async def get_data_model_dataframe_info(
     data_model_dataframe_id: PyObjectId = Path(description="Data model dataframe Id"),
     current_user: TokenData = Depends(get_current_user),
-) -> GetDataModelDataframe:
+) -> GetDataModelDataframe_Out:
     """
     Get data model dataframe information
 
@@ -214,7 +205,7 @@ async def get_data_model_dataframe_info(
     :type current_user: TokenData, optional
     :raises HTTPException: 404 if data model dataframe not found
     :return: Data model dataframe information and list of SCNs
-    :rtype: GetDataModelDataframe
+    :rtype: GetDataModelDataframe_Out
     """
     # Get the data model dataframe
     data_model_dataframe_db = await DataModelDataframe.read(
@@ -226,11 +217,11 @@ async def get_data_model_dataframe_info(
     message = f"[Get Data model dataframe Info]: user_id:{current_user.id}, data_model_dataframe_id: {data_model_dataframe_id}"
     await log_message(message)
 
-    return GetDataModelDataframe(**(data_model_dataframe_db[0].dict()))
+    return GetDataModelDataframe_Out(**(data_model_dataframe_db[0].dict()))
 
 
 @router.get(
-    path="/data-models",
+    path="/data-models-dataframes",
     description="Get all data model dataframe SCNs",
     response_description="All Data model dataframe information for the current organization or data model",
     response_model=GetMultipleDataModelDataframe_Out,
@@ -238,7 +229,6 @@ async def get_data_model_dataframe_info(
     operation_id="get_all_data_model_dataframe_info",
 )
 async def get_all_data_model_dataframe_info(
-    data_model_id: Optional[PyObjectId] = Query(default=None, description="Data model Id"),
     current_user: TokenData = Depends(get_current_user),
 ) -> GetMultipleDataModelDataframe_Out:
     """
@@ -250,16 +240,14 @@ async def get_all_data_model_dataframe_info(
     :type current_user: TokenData, optional
     :raises HTTPException: 404 if data model dataframe not found
     :return: Data model dataframe information and list of SCNs
-    :rtype: GetDataModelDataframe
+    :rtype: GetDataModelDataframe_Out
     """
     # Get the data model dataframe
-    data_model_dataframe_info = await DataModelDataframe.read(
-        organization_id=current_user.organization_id, data_model_id=data_model_id
-    )
+    data_model_dataframe_info = await DataModelDataframe.read(organization_id=current_user.organization_id)
 
-    response_list: List[GetDataModelDataframe] = []
+    response_list: List[GetDataModelDataframe_Out] = []
     for model in data_model_dataframe_info:
-        response_list.append(GetDataModelDataframe(**model.dict()))
+        response_list.append(GetDataModelDataframe_Out(**model.dict()))
 
     message = f"[Get All Data model dataframe Info]: user_id:{current_user.id}"
     await log_message(message)
@@ -268,7 +256,7 @@ async def get_all_data_model_dataframe_info(
 
 
 @router.patch(
-    path="/data-models/{data_model_dataframe_id}",
+    path="/data-models-dataframes/{data_model_dataframe_id}",
     description="Update data model dataframe",
     response_description="Data model dataframe information",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -309,7 +297,7 @@ async def update_data_model_dataframe(
 
 
 @router.delete(
-    path="/data-models/{data_model_dataframe_id}",
+    path="/data-models-dataframes/{data_model_dataframe_id}",
     description="Soft delete data model dataframe",
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="delete_data_model_dataframe",

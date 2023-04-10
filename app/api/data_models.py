@@ -26,7 +26,7 @@ from app.models.common import PyObjectId
 from app.models.data_models import (
     DataModel_Db,
     DataModelState,
-    GetDataModel,
+    GetDataModel_Out,
     GetMultipleDataModel_Out,
     RegisterDataModel_In,
     RegisterDataModel_Out,
@@ -64,7 +64,6 @@ class DataModel:
     async def read(
         data_model_id: Optional[PyObjectId] = None,
         organization_id: Optional[PyObjectId] = None,
-        data_federation_id: Optional[PyObjectId] = None,
         throw_on_not_found: bool = True,
     ) -> List[DataModel_Db]:
         """
@@ -83,8 +82,6 @@ class DataModel:
             query["_id"] = data_model_id
         if organization_id:
             query["organization_id"] = organization_id
-        if data_federation_id:
-            query["data_federation_id"] = data_federation_id
 
         if not query:
             raise Exception("Invalid query")
@@ -129,10 +126,10 @@ class DataModel:
             update_request["$set"] = {"state": state.value}
 
         if data_model_dataframe_to_add:
-            update_request["$push"] = {"dataframes": {"$each": data_model_dataframe_to_add}}
+            update_request["$push"] = {"dataframes": {"$each": list(map(str, data_model_dataframe_to_add))}}
 
         if data_model_dataframe_to_remove:
-            update_request["$pull"] = {"dataframes": {"$in": data_model_dataframe_to_remove}}
+            update_request["$pull"] = {"dataframes": {"$in": list(map(str, data_model_dataframe_to_remove))}}
 
         return await data_service.update_many(
             collection=DataModel.DB_COLLECTION_DATA_MODEL,
@@ -143,8 +140,8 @@ class DataModel:
 
 @router.post(
     path="/data-models",
-    description="Provision data federation SCNs",
-    response_description="Data model Id and list of SCNs",
+    description="Register a new data model",
+    response_description="Data model Id",
     response_model=RegisterDataModel_Out,
     response_model_by_alias=False,
     response_model_exclude_unset=True,
@@ -165,18 +162,13 @@ async def register_data_model(
     :return: Data model Id
     :rtype: RegisterDataModel_Out
     """
-    # Current user organization must be one of the the data federation researcher
-    data_federation_db = await get_data_federation(
-        data_federation_id=data_model_req.data_federation_id, current_user=current_user
-    )
-    if not data_federation_db:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Data Federation not found")
 
     # Create a new provision object
     data_model_db = DataModel_Db(
-        data_federation_id=data_model_req.data_federation_id,
+        name=data_model_req.name,
+        description=data_model_req.description,
         organization_id=current_user.organization_id,
-        dataframes=[],
+        data_model_dataframes=[],
         state=DataModelState.DRAFT,
     )
 
@@ -193,14 +185,14 @@ async def register_data_model(
     path="/data-models/{data_model_id}",
     description="Get data model",
     response_description="Data model information and list of SCNs",
-    response_model=GetDataModel,
+    response_model=GetDataModel_Out,
     status_code=status.HTTP_200_OK,
     operation_id="get_data_model_info",
 )
 async def get_data_model_info(
     data_model_id: PyObjectId = Path(description="Data model Id"),
     current_user: TokenData = Depends(get_current_user),
-) -> GetDataModel:
+) -> GetDataModel_Out:
     """
     Get data model information
 
@@ -222,7 +214,7 @@ async def get_data_model_info(
     message = f"[Get Data model Info]: user_id:{current_user.id}, data_model_id: {data_model_id}"
     await log_message(message)
 
-    return GetDataModel(**(provision_db[0].dict()))
+    return GetDataModel_Out(**(provision_db[0].dict()))
 
 
 @router.get(
@@ -234,7 +226,6 @@ async def get_data_model_info(
     operation_id="get_all_data_model_info",
 )
 async def get_all_data_model_info(
-    data_federation_id: Optional[PyObjectId] = Query(default=None, description="Data federation Id"),
     current_user: TokenData = Depends(get_current_user),
 ) -> GetMultipleDataModel_Out:
     """
@@ -249,13 +240,11 @@ async def get_all_data_model_info(
     :rtype: GetDataModel
     """
     # Get the data model
-    data_model_info = await DataModel.read(
-        organization_id=current_user.organization_id, data_federation_id=data_federation_id
-    )
+    data_model_info = await DataModel.read(organization_id=current_user.organization_id)
 
-    response_list: List[GetDataModel] = []
+    response_list: List[GetDataModel_Out] = []
     for model in data_model_info:
-        response_list.append(GetDataModel(**model.dict()))
+        response_list.append(GetDataModel_Out(**model.dict()))
 
     message = f"[Get All Data model Info]: user_id:{current_user.id}"
     await log_message(message)

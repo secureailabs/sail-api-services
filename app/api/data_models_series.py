@@ -27,7 +27,7 @@ from app.models.common import PyObjectId
 from app.models.data_model_series import (
     DataModelSeries_Db,
     DataModelSeriesState,
-    GetDataModelSeries,
+    GetDataModelSeries_Out,
     GetMultipleDataModelSeries_Out,
     RegisterDataModelSeries_In,
     RegisterDataModelSeries_Out,
@@ -165,18 +165,12 @@ async def register_data_model_series(
     :return: Data model series Id
     :rtype: RegisterDataModelSeries_Out
     """
-    # Current user organization must be one of the the data federation researcher
-    data_federation_db = await get_data_model_dataframe_info(
-        data_model_dataframe_id=data_model_series_req.data_model_dataframe_id, current_user=current_user
-    )
-    if not data_federation_db:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Data Federation not found")
-
     # Create a new provision object
     data_model_series_db = DataModelSeries_Db(
-        data_model_dataframe_id=data_model_series_req.data_model_dataframe_id,
+        name=data_model_series_req.name,
+        description=data_model_series_req.description,
         organization_id=current_user.organization_id,
-        schema={},
+        series_schema=data_model_series_req.series_schema,
         state=DataModelSeriesState.ACTIVE,
     )
 
@@ -193,14 +187,14 @@ async def register_data_model_series(
     path="/data-models-series/{data_model_series_id}",
     description="Get data model series",
     response_description="Data model series information and list of SCNs",
-    response_model=GetDataModelSeries,
+    response_model=GetDataModelSeries_Out,
     status_code=status.HTTP_200_OK,
     operation_id="get_data_model_series_info",
 )
 async def get_data_model_series_info(
     data_model_series_id: PyObjectId = Path(description="Data model series Id"),
     current_user: TokenData = Depends(get_current_user),
-) -> GetDataModelSeries:
+) -> GetDataModelSeries_Out:
     """
     Get data model series information
 
@@ -210,7 +204,7 @@ async def get_data_model_series_info(
     :type current_user: TokenData, optional
     :raises HTTPException: 404 if data model series not found
     :return: Data model series information and list of SCNs
-    :rtype: GetDataModelSeries
+    :rtype: GetDataModelSeries_Out
     """
     # Get the data model series
     data_model_series_db = await DataModelSeries.read(
@@ -222,7 +216,7 @@ async def get_data_model_series_info(
     message = f"[Get Data model series Info]: user_id:{current_user.id}, data_model_series_id: {data_model_series_id}"
     await log_message(message)
 
-    return GetDataModelSeries(**(data_model_series_db[0].dict()))
+    return GetDataModelSeries_Out(**(data_model_series_db[0].dict()))
 
 
 @router.get(
@@ -246,16 +240,16 @@ async def get_all_data_model_series_info(
     :type current_user: TokenData, optional
     :raises HTTPException: 404 if data model series not found
     :return: Data model series information and list of SCNs
-    :rtype: GetDataModelSeries
+    :rtype: GetDataModelSeries_Out
     """
     # Get the data model series
     data_model_series_info = await DataModelSeries.read(
         organization_id=current_user.organization_id, data_model_dataframe_id=data_model_dataframe_id
     )
 
-    response_list: List[GetDataModelSeries] = []
+    response_list: List[GetDataModelSeries_Out] = []
     for model in data_model_series_info:
-        response_list.append(GetDataModelSeries(**model.dict()))
+        response_list.append(GetDataModelSeries_Out(**model.dict()))
 
     message = f"[Get All Data model series Info]: user_id:{current_user.id}"
     await log_message(message)
@@ -267,7 +261,7 @@ async def get_all_data_model_series_info(
     path="/data-models-series/{data_model_series_id}",
     description="Update data model series",
     response_description="Data model series information",
-    response_model=GetDataModelSeries,
+    response_model=GetDataModelSeries_Out,
     status_code=status.HTTP_200_OK,
     operation_id="update_data_model_series",
 )
@@ -287,7 +281,7 @@ async def update_data_model_series(
     :type current_user: TokenData, optional
     :raises HTTPException: 404 if data model series not found
     :return: Data model series information
-    :rtype: GetDataModelSeries
+    :rtype: GetDataModelSeries_Out
     """
     # Update the data model series
     await DataModelSeries.update(

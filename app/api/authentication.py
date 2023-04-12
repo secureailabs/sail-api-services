@@ -175,7 +175,6 @@ async def login_for_access_token(
 async def refresh_for_access_token(
     refresh_token_request: RefreshToken_In = Body(description="Refresh token request"),
 ):
-
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials."
     )

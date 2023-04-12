@@ -19,7 +19,6 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Respon
 from fastapi.encoders import jsonable_encoder
 
 from app.api.authentication import get_current_user
-from app.api.data_models_dataframe import get_data_model_dataframe_info
 from app.data import operations as data_service
 from app.log import log_message
 from app.models.authentication import TokenData
@@ -42,7 +41,7 @@ class DataModelSeries:
     Data model series CRUD operations
     """
 
-    DB_COLLECTION_DATA_MODEL_SERIES = "data-models-series-series"
+    DB_COLLECTION_DATA_MODEL_SERIES = "data-models-series"
 
     @staticmethod
     async def create(
@@ -228,7 +227,6 @@ async def get_data_model_series_info(
     operation_id="get_all_data_model_series_info",
 )
 async def get_all_data_model_series_info(
-    data_model_dataframe_id: Optional[PyObjectId] = Query(default=None, description="Data model Id"),
     current_user: TokenData = Depends(get_current_user),
 ) -> GetMultipleDataModelSeries_Out:
     """
@@ -243,9 +241,7 @@ async def get_all_data_model_series_info(
     :rtype: GetDataModelSeries_Out
     """
     # Get the data model series
-    data_model_series_info = await DataModelSeries.read(
-        organization_id=current_user.organization_id, data_model_dataframe_id=data_model_dataframe_id
-    )
+    data_model_series_info = await DataModelSeries.read(organization_id=current_user.organization_id)
 
     response_list: List[GetDataModelSeries_Out] = []
     for model in data_model_series_info:

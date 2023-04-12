@@ -21,6 +21,17 @@ from pydantic import Field
 from app.models.common import BasicObjectInfo, PyObjectId, SailBaseModel
 
 
+class SeriesDataModelSchema(SailBaseModel):
+    type: str
+    series_name: str
+    series_data_model_id: str
+    list_value: Optional[List[str]]
+    unit: Optional[str]
+    min: Optional[float]
+    max: Optional[float]
+    resolution: Optional[float]
+
+
 class DataModelSeriesState(Enum):
     ACTIVE = "ACTIVE"
     DELETED = "DELETED"
@@ -29,7 +40,7 @@ class DataModelSeriesState(Enum):
 class DataModelSeries_Base(SailBaseModel):
     name: str = Field()
     description: str = Field()
-    series_schema: Dict = Field()
+    series_schema: SeriesDataModelSchema = Field()
 
 
 class DataModelSeries_Db(DataModelSeries_Base):
@@ -59,5 +70,5 @@ class RegisterDataModelSeries_Out(SailBaseModel):
 
 
 class UpdateDataModelSeries_In(SailBaseModel):
-    series_schema: Optional[Dict] = Field(default=None)
+    series_schema: Optional[SeriesDataModelSchema] = Field(default=None)
     state: Optional[DataModelSeriesState] = Field(default=None)

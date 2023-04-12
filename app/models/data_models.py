@@ -21,7 +21,7 @@ from pydantic import Field
 from app.models.common import BasicObjectInfo, PyObjectId, SailBaseModel
 
 
-class DataModelState(Enum):
+class DataModelState(str, Enum):
     DRAFT = "DRAFT"
     PUBLISHED = "PUBLISHED"
     DELETED = "DELETED"
@@ -44,7 +44,7 @@ class GetDataModel_Out(DataModel_Base):
     id: PyObjectId = Field(alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field(...)
-    data_model_dataframes: List[BasicObjectInfo] = Field(...)
+    data_model_dataframes: List[PyObjectId] = Field(...)
     state: DataModelState = Field(...)
 
 
@@ -62,9 +62,9 @@ class RegisterDataModel_Out(SailBaseModel):
 
 class UpdateDataModel_In(SailBaseModel):
     data_model_dataframe_to_add: Optional[List[PyObjectId]] = Field(
-        description="The data_model_dataframes to add to the data model"
+        default=None, description="The data_model_dataframes to add to the data model"
     )
     data_model_dataframe_to_remove: Optional[List[PyObjectId]] = Field(
-        description="The data_model_dataframes to remove from the data model"
+        default=None, description="The data_model_dataframes to remove from the data model"
     )
-    state: Optional[DataModelState] = Field(description="The state of the data model")
+    state: Optional[DataModelState] = Field(default=None, description="The state of the data model")

@@ -12,7 +12,7 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Response, status
 from fastapi.encoders import jsonable_encoder
@@ -126,10 +126,10 @@ class DataModel:
             update_request["$set"] = {"state": state.value}
 
         if data_model_dataframe_to_add:
-            update_request["$push"] = {"dataframes": {"$each": list(map(str, data_model_dataframe_to_add))}}
+            update_request["$push"] = {"data_model_dataframes": {"$each": list(map(str, data_model_dataframe_to_add))}}
 
         if data_model_dataframe_to_remove:
-            update_request["$pull"] = {"dataframes": {"$in": list(map(str, data_model_dataframe_to_remove))}}
+            update_request["$pull"] = {"data_model_dataframes": {"$in": list(map(str, data_model_dataframe_to_remove))}}
 
         return await data_service.update_many(
             collection=DataModel.DB_COLLECTION_DATA_MODEL,
@@ -219,8 +219,8 @@ async def get_data_model_info(
 
 @router.get(
     path="/data-models",
-    description="Get all data model SCNs",
-    response_description="All Data model information for the current organization or federation",
+    description="Get all data model",
+    response_description="All Data model information for the current organization",
     response_model=GetMultipleDataModel_Out,
     status_code=status.HTTP_200_OK,
     operation_id="get_all_data_model_info",
@@ -236,7 +236,7 @@ async def get_all_data_model_info(
     :param current_user: current user information, defaults to Depends(get_current_user)
     :type current_user: TokenData, optional
     :raises HTTPException: 404 if data model not found
-    :return: Data model information and list of SCNs
+    :return: Data model information
     :rtype: GetDataModel
     """
     # Get the data model

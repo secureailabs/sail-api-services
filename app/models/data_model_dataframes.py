@@ -43,7 +43,7 @@ class GetDataModelDataframe_Out(DataModelDataframe_Base):
     id: PyObjectId = Field(alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field()
-    data_model_series: List[BasicObjectInfo] = Field()
+    data_model_series: List[PyObjectId] = Field()
     state: DataModelDataframeState = Field()
 
 

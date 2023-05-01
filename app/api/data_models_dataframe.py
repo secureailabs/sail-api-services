@@ -190,6 +190,7 @@ async def register_data_model_dataframe(
     response_description="Data model dataframe information and list of SCNs",
     response_model=GetDataModelDataframe_Out,
     status_code=status.HTTP_200_OK,
+    response_model_by_alias=False,
     operation_id="get_data_model_dataframe_info",
 )
 async def get_data_model_dataframe_info(
@@ -210,7 +211,6 @@ async def get_data_model_dataframe_info(
     # Get the data model dataframe
     data_model_dataframe_db = await DataModelDataframe.read(
         data_model_dataframe_id=data_model_dataframe_id,
-        organization_id=current_user.organization_id,
         throw_on_not_found=True,
     )
 

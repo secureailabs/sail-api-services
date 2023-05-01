@@ -128,7 +128,7 @@ async def get_all_data_federations(
     current_user: TokenData = Depends(get_current_user),
 ) -> GetMultipleDataFederation_Out:
     if (data_submitter_id) and (data_submitter_id == current_user.organization_id):
-        query = ({"data_submitters.organization_id": str(current_user.organization_id)},)
+        query = {"data_submitters.organization_id": str(current_user.organization_id)}
     elif (researcher_id) and (researcher_id == current_user.organization_id):
         query = {"researcher_id": {"$all": [str(current_user.organization_id)]}}
     elif dataset_id:
@@ -146,7 +146,7 @@ async def get_all_data_federations(
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    data_federations = await data_service.find_by_query(DB_COLLECTION_DATA_FEDERATIONS, query)
+    data_federations = await data_service.find_by_query(DB_COLLECTION_DATA_FEDERATIONS, jsonable_encoder(query))
 
     response_list_of_data_federations: List[GetDataFederation_Out] = []
 
@@ -586,8 +586,8 @@ async def invite_data_submitter(
 
 
 ########################################################################################################################
-@router.put(
-    path="/data-federations/{data_federation_id}/data-models",
+@router.patch(
+    path="/data-federations/{data_federation_id}",
     description="Add a data model to a data federation",
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="add_data_model",
@@ -595,7 +595,7 @@ async def invite_data_submitter(
 async def add_data_model(
     request: Request,
     data_federation_id: PyObjectId = Path(description="UUID of the data federation"),
-    data_model: dict = Body(description="Data model(json) to be added"),
+    data_model_id: PyObjectId = Body(description="Data model Id to be added"),
     current_user: TokenData = Depends(get_current_user),
 ):
     """
@@ -603,22 +603,14 @@ async def add_data_model(
 
     :param data_federation_id: data federation for which the fhir profile is being added
     :type data_federation_id: PyObjectId
-    :param data_model: data model json to be added
-    :type data_model: str
+    :param data_model_id: data model to be added
+    :type data_model: PyObjectId
     :param current_user: current user information, defaults to Depends(get_current_user)
     :type current_user: TokenData, optional
     :raises http_exception: HTTP_404_NOT_FOUND, "DataFederation not found"
     :return: None
     :rtype: None
     """
-    # Only data federation owner can add a fhir profile
-    data_model_str = (await request.body()).decode("utf-8")
-    if len(data_model_str) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Data model is empty",
-        )
-
     # Get the data federation
     data_federation_db = await data_service.find_one(
         DB_COLLECTION_DATA_FEDERATIONS,
@@ -628,7 +620,7 @@ async def add_data_model(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="DataFederation not found")
     data_federation_db = DataFederation_Db(**data_federation_db)
 
-    if data_federation_db.data_model is not None:
+    if data_federation_db.data_model_id is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The data model already exists",
@@ -637,7 +629,7 @@ async def add_data_model(
     await data_service.update_one(
         DB_COLLECTION_DATA_FEDERATIONS,
         {"_id": str(data_federation_id)},
-        {"$set": {"data_model": data_model_str}},
+        {"$set": {"data_model_id": str(data_model_id)}},
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

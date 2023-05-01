@@ -198,10 +198,10 @@ async def get_dataset_version_connection_string(
     dataset_version = DatasetVersion_Db(**dataset_version)  # type: ignore
 
     # Send the connection string only if the dataset version is not uploaded to prevent overwriting
-    if dataset_version.state != DatasetVersionState.NOT_UPLOADED:
+    if dataset_version.state != DatasetVersionState.ENCRYPTING:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Dataset version is already uploaded or in progress",
+            detail="Dataset version is not in ENCRYPTING state. Cannot get the connection string.",
         )
 
     # Authenticate azure

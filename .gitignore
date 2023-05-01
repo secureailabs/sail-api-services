@@ -1,5 +1,4 @@
 __pycache__
 **venv**
-**/generated/**
 .hypothesis
 .pytest_cache

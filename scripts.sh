@@ -76,6 +76,11 @@ generate_client() {
     rm -rf sail-client/
     openapi-python-client generate --path docs/openapi.json
 
+    # Generate a whl package for the client using the pyproject.toml file
+    pushd sail-client
+    poetry build
+    popd
+
     popd
 }
 

@@ -12,13 +12,12 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
-from typing import List, Optional, Union
+from typing import List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Response, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 
 from app.api.authentication import get_current_user
-from app.api.data_federations import get_data_federation
 from app.data import operations as data_service
 from app.log import log_message
 from app.models.authentication import TokenData
@@ -187,6 +186,7 @@ async def register_data_model(
     response_description="Data model information and list of SCNs",
     response_model=GetDataModel_Out,
     status_code=status.HTTP_200_OK,
+    response_model_by_alias=False,
     operation_id="get_data_model_info",
 )
 async def get_data_model_info(
@@ -207,7 +207,6 @@ async def get_data_model_info(
     # Get the data model
     provision_db = await DataModel.read(
         data_model_id=data_model_id,
-        organization_id=current_user.organization_id,
         throw_on_not_found=True,
     )
 

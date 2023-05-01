@@ -62,7 +62,7 @@ class DataModelSeries:
 
     @staticmethod
     async def read(
-        organization_id: PyObjectId,
+        organization_id: Optional[PyObjectId] = None,
         data_model_series_id: Optional[PyObjectId] = None,
         data_model_dataframe_id: Optional[PyObjectId] = None,
         throw_on_not_found: bool = True,
@@ -188,6 +188,7 @@ async def register_data_model_series(
     response_description="Data model series information and list of SCNs",
     response_model=GetDataModelSeries_Out,
     status_code=status.HTTP_200_OK,
+    response_model_by_alias=False,
     operation_id="get_data_model_series_info",
 )
 async def get_data_model_series_info(
@@ -208,7 +209,6 @@ async def get_data_model_series_info(
     # Get the data model series
     data_model_series_db = await DataModelSeries.read(
         data_model_series_id=data_model_series_id,
-        organization_id=current_user.organization_id,
         throw_on_not_found=True,
     )
 

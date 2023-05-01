@@ -36,7 +36,7 @@ class DataFederation_Base(SailBaseModel):
     name: StrictStr = Field(...)
     description: StrictStr = Field(...)
     data_format: DataFederationDataFormat = Field(...)
-    data_model: Optional[StrictStr] = Field(...)
+    data_model_id: Optional[PyObjectId] = Field(default=None)
 
 
 class DataSubmitterIdKeyPair(SailBaseModel):

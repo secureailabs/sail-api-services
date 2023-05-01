@@ -33,6 +33,7 @@ def _get_kwargs(
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
+        "follow_redirects": client.follow_redirects,
         "json": json_json_body,
     }
 
@@ -40,9 +41,6 @@ def _get_kwargs(
 def _parse_response(
     *, client: Client, response: httpx.Response
 ) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception(f"Failure status code: {response.status_code}. Details: {response.text}")
-
     if response.status_code == HTTPStatus.OK:
         response_200 = cast(Any, response.json())
         return response_200
@@ -63,7 +61,7 @@ def _parse_response(
 
         return response_410
     if client.raise_on_unexpected_status:
-        raise errors.UnexpectedStatus(f"Unexpected status code: {response.status_code}")
+        raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
@@ -93,7 +91,7 @@ def sync_detailed(
     Args:
         organization_id (str): UUID of the invited organization
         invite_id (str): UUID of the invite to be approved to rejected
-        json_body (PatchInviteIn): The accpet or reject information
+        json_body (PatchInviteIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -132,14 +130,14 @@ def sync(
     Args:
         organization_id (str): UUID of the invited organization
         invite_id (str): UUID of the invite to be approved to rejected
-        json_body (PatchInviteIn): The accpet or reject information
+        json_body (PatchInviteIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPExceptionObj, ValidationError]]
+        Union[Any, HTTPExceptionObj, ValidationError]
     """
 
     return sync_detailed(
@@ -164,7 +162,7 @@ async def asyncio_detailed(
     Args:
         organization_id (str): UUID of the invited organization
         invite_id (str): UUID of the invite to be approved to rejected
-        json_body (PatchInviteIn): The accpet or reject information
+        json_body (PatchInviteIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -201,14 +199,14 @@ async def asyncio(
     Args:
         organization_id (str): UUID of the invited organization
         invite_id (str): UUID of the invite to be approved to rejected
-        json_body (PatchInviteIn): The accpet or reject information
+        json_body (PatchInviteIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPExceptionObj, ValidationError]]
+        Union[Any, HTTPExceptionObj, ValidationError]
     """
 
     return (

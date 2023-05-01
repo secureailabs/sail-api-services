@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
 import httpx
 
@@ -23,23 +23,20 @@ def _get_kwargs(
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
+        "follow_redirects": client.follow_redirects,
     }
 
 
-def _parse_response(*, client: Client, response: httpx.Response) -> Optional[None]:
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception(f"Failure status code: {response.status_code}. Details: {response.text}")
-
+def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Any]:
     if response.status_code == HTTPStatus.NO_CONTENT:
-        response_204 = cast(None, None)
-        return response_204
+        return None
     if client.raise_on_unexpected_status:
-        raise errors.UnexpectedStatus(f"Unexpected status code: {response.status_code}")
+        raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
-def _build_response(*, client: Client, response: httpx.Response) -> Response[None]:
+def _build_response(*, client: Client, response: httpx.Response) -> Response[Any]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -51,7 +48,7 @@ def _build_response(*, client: Client, response: httpx.Response) -> Response[Non
 def sync_detailed(
     *,
     client: Client,
-) -> Response[None]:
+) -> Response[Any]:
     """Register Dataset
 
      Drop the database
@@ -61,7 +58,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[None]
+        Response[Any]
     """
 
     kwargs = _get_kwargs(
@@ -76,31 +73,10 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(
-    *,
-    client: Client,
-) -> Optional[None]:
-    """Register Dataset
-
-     Drop the database
-
-    Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
-
-    Returns:
-        Response[None]
-    """
-
-    return sync_detailed(
-        client=client,
-    ).parsed
-
-
 async def asyncio_detailed(
     *,
     client: Client,
-) -> Response[None]:
+) -> Response[Any]:
     """Register Dataset
 
      Drop the database
@@ -110,7 +86,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[None]
+        Response[Any]
     """
 
     kwargs = _get_kwargs(
@@ -121,26 +97,3 @@ async def asyncio_detailed(
         response = await _client.request(**kwargs)
 
     return _build_response(client=client, response=response)
-
-
-async def asyncio(
-    *,
-    client: Client,
-) -> Optional[None]:
-    """Register Dataset
-
-     Drop the database
-
-    Raises:
-        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
-
-    Returns:
-        Response[None]
-    """
-
-    return (
-        await asyncio_detailed(
-            client=client,
-        )
-    ).parsed

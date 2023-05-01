@@ -25,27 +25,25 @@ def _get_kwargs(
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
+        "follow_redirects": client.follow_redirects,
     }
 
 
-def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Union[None, ValidationError]]:
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception(f"Failure status code: {response.status_code}. Details: {response.text}")
-
+def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Union[Any, ValidationError]]:
     if response.status_code == HTTPStatus.NO_CONTENT:
-        response_204 = cast(None, None)
+        response_204 = cast(Any, None)
         return response_204
     if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
         response_422 = ValidationError.from_dict(response.json())
 
         return response_422
     if client.raise_on_unexpected_status:
-        raise errors.UnexpectedStatus(f"Unexpected status code: {response.status_code}")
+        raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
-def _build_response(*, client: Client, response: httpx.Response) -> Response[Union[None, ValidationError]]:
+def _build_response(*, client: Client, response: httpx.Response) -> Response[Union[Any, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -58,7 +56,7 @@ def sync_detailed(
     provision_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[None, ValidationError]]:
+) -> Response[Union[Any, ValidationError]]:
     """Deprovision Data Federation
 
      Deprovision data federation SCNs
@@ -71,7 +69,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[None, ValidationError]]
+        Response[Union[Any, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -91,7 +89,7 @@ def sync(
     provision_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[None, ValidationError]]:
+) -> Optional[Union[Any, ValidationError]]:
     """Deprovision Data Federation
 
      Deprovision data federation SCNs
@@ -104,7 +102,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[None, ValidationError]]
+        Union[Any, ValidationError]
     """
 
     return sync_detailed(
@@ -117,7 +115,7 @@ async def asyncio_detailed(
     provision_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[None, ValidationError]]:
+) -> Response[Union[Any, ValidationError]]:
     """Deprovision Data Federation
 
      Deprovision data federation SCNs
@@ -130,7 +128,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[None, ValidationError]]
+        Response[Union[Any, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -148,7 +146,7 @@ async def asyncio(
     provision_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[None, ValidationError]]:
+) -> Optional[Union[Any, ValidationError]]:
     """Deprovision Data Federation
 
      Deprovision data federation SCNs
@@ -161,7 +159,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[None, ValidationError]]
+        Union[Any, ValidationError]
     """
 
     return (

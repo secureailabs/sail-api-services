@@ -30,6 +30,7 @@ def _get_kwargs(
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
+        "follow_redirects": client.follow_redirects,
         "json": json_json_body,
     }
 
@@ -37,9 +38,6 @@ def _get_kwargs(
 def _parse_response(
     *, client: Client, response: httpx.Response
 ) -> Optional[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]:
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception(f"Failure status code: {response.status_code}. Details: {response.text}")
-
     if response.status_code == HTTPStatus.CREATED:
         response_201 = RegisterDataFederationProvisionOut.from_dict(response.json())
 
@@ -57,7 +55,7 @@ def _parse_response(
 
         return response_403
     if client.raise_on_unexpected_status:
-        raise errors.UnexpectedStatus(f"Unexpected status code: {response.status_code}")
+        raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
@@ -83,7 +81,7 @@ def sync_detailed(
      Provision data federation SCNs
 
     Args:
-        json_body (RegisterDataFederationProvisionIn): Information required for provsioning
+        json_body (RegisterDataFederationProvisionIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -116,14 +114,14 @@ def sync(
      Provision data federation SCNs
 
     Args:
-        json_body (RegisterDataFederationProvisionIn): Information required for provsioning
+        json_body (RegisterDataFederationProvisionIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]
+        Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]
     """
 
     return sync_detailed(
@@ -142,7 +140,7 @@ async def asyncio_detailed(
      Provision data federation SCNs
 
     Args:
-        json_body (RegisterDataFederationProvisionIn): Information required for provsioning
+        json_body (RegisterDataFederationProvisionIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -173,14 +171,14 @@ async def asyncio(
      Provision data federation SCNs
 
     Args:
-        json_body (RegisterDataFederationProvisionIn): Information required for provsioning
+        json_body (RegisterDataFederationProvisionIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]
+        Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]
     """
 
     return (

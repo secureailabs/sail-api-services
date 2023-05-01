@@ -31,17 +31,15 @@ def _get_kwargs(
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
+        "follow_redirects": client.follow_redirects,
     }
 
 
 def _parse_response(
     *, client: Client, response: httpx.Response
-) -> Optional[Union[HTTPExceptionObj, None, ValidationError]]:
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception(f"Failure status code: {response.status_code}. Details: {response.text}")
-
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
     if response.status_code == HTTPStatus.NO_CONTENT:
-        response_204 = cast(None, None)
+        response_204 = cast(Any, None)
         return response_204
     if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
         response_422 = ValidationError.from_dict(response.json())
@@ -56,14 +54,14 @@ def _parse_response(
 
         return response_510
     if client.raise_on_unexpected_status:
-        raise errors.UnexpectedStatus(f"Unexpected status code: {response.status_code}")
+        raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
 def _build_response(
     *, client: Client, response: httpx.Response
-) -> Response[Union[HTTPExceptionObj, None, ValidationError]]:
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -77,7 +75,7 @@ def sync_detailed(
     data_submitter_organization_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[HTTPExceptionObj, None, ValidationError]]:
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Invite Data Submitter
 
      Invite a data submitter to join a data federation
@@ -92,7 +90,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, None, ValidationError]]
+        Response[Union[Any, HTTPExceptionObj, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -114,7 +112,7 @@ def sync(
     data_submitter_organization_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[HTTPExceptionObj, None, ValidationError]]:
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Invite Data Submitter
 
      Invite a data submitter to join a data federation
@@ -129,7 +127,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, None, ValidationError]]
+        Union[Any, HTTPExceptionObj, ValidationError]
     """
 
     return sync_detailed(
@@ -144,7 +142,7 @@ async def asyncio_detailed(
     data_submitter_organization_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[HTTPExceptionObj, None, ValidationError]]:
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Invite Data Submitter
 
      Invite a data submitter to join a data federation
@@ -159,7 +157,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, None, ValidationError]]
+        Response[Union[Any, HTTPExceptionObj, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -179,7 +177,7 @@ async def asyncio(
     data_submitter_organization_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[HTTPExceptionObj, None, ValidationError]]:
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Invite Data Submitter
 
      Invite a data submitter to join a data federation
@@ -194,7 +192,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, None, ValidationError]]
+        Union[Any, HTTPExceptionObj, ValidationError]
     """
 
     return (

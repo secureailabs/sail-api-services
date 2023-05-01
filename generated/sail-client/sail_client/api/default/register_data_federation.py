@@ -29,6 +29,7 @@ def _get_kwargs(
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
+        "follow_redirects": client.follow_redirects,
         "json": json_json_body,
     }
 
@@ -36,9 +37,6 @@ def _get_kwargs(
 def _parse_response(
     *, client: Client, response: httpx.Response
 ) -> Optional[Union[RegisterDataFederationOut, ValidationError]]:
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception(f"Failure status code: {response.status_code}. Details: {response.text}")
-
     if response.status_code == HTTPStatus.CREATED:
         response_201 = RegisterDataFederationOut.from_dict(response.json())
 
@@ -48,7 +46,7 @@ def _parse_response(
 
         return response_422
     if client.raise_on_unexpected_status:
-        raise errors.UnexpectedStatus(f"Unexpected status code: {response.status_code}")
+        raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
@@ -74,7 +72,7 @@ def sync_detailed(
      Register new data federation
 
     Args:
-        json_body (RegisterDataFederationIn): Data Federation details to be registered
+        json_body (RegisterDataFederationIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -107,14 +105,14 @@ def sync(
      Register new data federation
 
     Args:
-        json_body (RegisterDataFederationIn): Data Federation details to be registered
+        json_body (RegisterDataFederationIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[RegisterDataFederationOut, ValidationError]]
+        Union[RegisterDataFederationOut, ValidationError]
     """
 
     return sync_detailed(
@@ -133,7 +131,7 @@ async def asyncio_detailed(
      Register new data federation
 
     Args:
-        json_body (RegisterDataFederationIn): Data Federation details to be registered
+        json_body (RegisterDataFederationIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -164,14 +162,14 @@ async def asyncio(
      Register new data federation
 
     Args:
-        json_body (RegisterDataFederationIn): Data Federation details to be registered
+        json_body (RegisterDataFederationIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[RegisterDataFederationOut, ValidationError]]
+        Union[RegisterDataFederationOut, ValidationError]
     """
 
     return (

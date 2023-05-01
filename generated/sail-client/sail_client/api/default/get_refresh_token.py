@@ -30,6 +30,7 @@ def _get_kwargs(
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
+        "follow_redirects": client.follow_redirects,
         "json": json_json_body,
     }
 
@@ -37,9 +38,6 @@ def _get_kwargs(
 def _parse_response(
     *, client: Client, response: httpx.Response
 ) -> Optional[Union[HTTPExceptionObj, LoginSuccessOut, ValidationError]]:
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception(f"Failure status code: {response.status_code}. Details: {response.text}")
-
     if response.status_code == HTTPStatus.OK:
         response_200 = LoginSuccessOut.from_dict(response.json())
 
@@ -53,7 +51,7 @@ def _parse_response(
 
         return response_401
     if client.raise_on_unexpected_status:
-        raise errors.UnexpectedStatus(f"Unexpected status code: {response.status_code}")
+        raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
@@ -79,7 +77,7 @@ def sync_detailed(
      Refresh the JWT token for the user
 
     Args:
-        json_body (RefreshTokenIn): Refresh token request
+        json_body (RefreshTokenIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -112,14 +110,14 @@ def sync(
      Refresh the JWT token for the user
 
     Args:
-        json_body (RefreshTokenIn): Refresh token request
+        json_body (RefreshTokenIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, LoginSuccessOut, ValidationError]]
+        Union[HTTPExceptionObj, LoginSuccessOut, ValidationError]
     """
 
     return sync_detailed(
@@ -138,7 +136,7 @@ async def asyncio_detailed(
      Refresh the JWT token for the user
 
     Args:
-        json_body (RefreshTokenIn): Refresh token request
+        json_body (RefreshTokenIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -169,14 +167,14 @@ async def asyncio(
      Refresh the JWT token for the user
 
     Args:
-        json_body (RefreshTokenIn): Refresh token request
+        json_body (RefreshTokenIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, LoginSuccessOut, ValidationError]]
+        Union[HTTPExceptionObj, LoginSuccessOut, ValidationError]
     """
 
     return (

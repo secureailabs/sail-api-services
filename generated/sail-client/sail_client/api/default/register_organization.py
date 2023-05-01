@@ -30,6 +30,7 @@ def _get_kwargs(
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
+        "follow_redirects": client.follow_redirects,
         "json": json_json_body,
     }
 
@@ -37,9 +38,6 @@ def _get_kwargs(
 def _parse_response(
     *, client: Client, response: httpx.Response
 ) -> Optional[Union[HTTPExceptionObj, RegisterOrganizationOut, ValidationError]]:
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception(f"Failure status code: {response.status_code}. Details: {response.text}")
-
     if response.status_code == HTTPStatus.CREATED:
         response_201 = RegisterOrganizationOut.from_dict(response.json())
 
@@ -53,7 +51,7 @@ def _parse_response(
 
         return response_409
     if client.raise_on_unexpected_status:
-        raise errors.UnexpectedStatus(f"Unexpected status code: {response.status_code}")
+        raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
@@ -79,7 +77,7 @@ def sync_detailed(
      Register new organization and the admin user
 
     Args:
-        json_body (RegisterOrganizationIn): Organization details
+        json_body (RegisterOrganizationIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -112,14 +110,14 @@ def sync(
      Register new organization and the admin user
 
     Args:
-        json_body (RegisterOrganizationIn): Organization details
+        json_body (RegisterOrganizationIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, RegisterOrganizationOut, ValidationError]]
+        Union[HTTPExceptionObj, RegisterOrganizationOut, ValidationError]
     """
 
     return sync_detailed(
@@ -138,7 +136,7 @@ async def asyncio_detailed(
      Register new organization and the admin user
 
     Args:
-        json_body (RegisterOrganizationIn): Organization details
+        json_body (RegisterOrganizationIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -169,14 +167,14 @@ async def asyncio(
      Register new organization and the admin user
 
     Args:
-        json_body (RegisterOrganizationIn): Organization details
+        json_body (RegisterOrganizationIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, RegisterOrganizationOut, ValidationError]]
+        Union[HTTPExceptionObj, RegisterOrganizationOut, ValidationError]
     """
 
     return (

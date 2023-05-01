@@ -1,6 +1,5 @@
 """ Contains all the data models used in inputs/outputs """
 
-from .add_data_model_data_model import AddDataModelDataModel
 from .basic_object_info import BasicObjectInfo
 from .body_login import BodyLogin
 from .data_federation_data_format import DataFederationDataFormat
@@ -81,7 +80,6 @@ from .user_role import UserRole
 from .validation_error import ValidationError
 
 __all__ = (
-    "AddDataModelDataModel",
     "BasicObjectInfo",
     "BodyLogin",
     "DataFederationDataFormat",

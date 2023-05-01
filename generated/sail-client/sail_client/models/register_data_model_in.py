@@ -2,29 +2,50 @@ from typing import Any, Dict, List, Type, TypeVar
 
 import attr
 
-T = TypeVar("T", bound="AddDataModelDataModel")
+T = TypeVar("T", bound="RegisterDataModelIn")
 
 
 @attr.s(auto_attribs=True)
-class AddDataModelDataModel:
-    """Data model(json) to be added"""
+class RegisterDataModelIn:
+    """
+    Attributes:
+        name (str):
+        description (str):
+    """
 
+    name: str
+    description: str
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
+        name = self.name
+        description = self.description
+
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update({})
+        field_dict.update(
+            {
+                "name": name,
+                "description": description,
+            }
+        )
 
         return field_dict
 
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        add_data_model_data_model = cls()
+        name = d.pop("name")
 
-        add_data_model_data_model.additional_properties = d
-        return add_data_model_data_model
+        description = d.pop("description")
+
+        register_data_model_in = cls(
+            name=name,
+            description=description,
+        )
+
+        register_data_model_in.additional_properties = d
+        return register_data_model_in
 
     @property
     def additional_keys(self) -> List[str]:

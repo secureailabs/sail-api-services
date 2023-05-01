@@ -22,13 +22,13 @@ class GetDataFederationOut:
         name (str):
         description (str):
         data_format (DataFederationDataFormat): An enumeration.
-        data_model (str):
         id (str):
         organization (BasicObjectInfo):
         state (DataFederationState): An enumeration.
         data_submitter_organizations (List['BasicObjectInfo']):
         research_organizations (List['BasicObjectInfo']):
         datasets (List['BasicObjectInfo']):
+        data_model_id (Union[Unset, str]):
         creation_time (Union[Unset, datetime.datetime]):
         data_submitter_organizations_invites_id (Union[Unset, List[str]]):
         research_organizations_invites_id (Union[Unset, List[str]]):
@@ -37,13 +37,13 @@ class GetDataFederationOut:
     name: str
     description: str
     data_format: DataFederationDataFormat
-    data_model: str
     id: str
     organization: "BasicObjectInfo"
     state: DataFederationState
     data_submitter_organizations: List["BasicObjectInfo"]
     research_organizations: List["BasicObjectInfo"]
     datasets: List["BasicObjectInfo"]
+    data_model_id: Union[Unset, str] = UNSET
     creation_time: Union[Unset, datetime.datetime] = UNSET
     data_submitter_organizations_invites_id: Union[Unset, List[str]] = UNSET
     research_organizations_invites_id: Union[Unset, List[str]] = UNSET
@@ -54,7 +54,6 @@ class GetDataFederationOut:
         description = self.description
         data_format = self.data_format.value
 
-        data_model = self.data_model
         id = self.id
         organization = self.organization.to_dict()
 
@@ -78,6 +77,7 @@ class GetDataFederationOut:
 
             datasets.append(datasets_item)
 
+        data_model_id = self.data_model_id
         creation_time: Union[Unset, str] = UNSET
         if not isinstance(self.creation_time, Unset):
             creation_time = self.creation_time.isoformat()
@@ -97,7 +97,6 @@ class GetDataFederationOut:
                 "name": name,
                 "description": description,
                 "data_format": data_format,
-                "data_model": data_model,
                 "id": id,
                 "organization": organization,
                 "state": state,
@@ -106,6 +105,8 @@ class GetDataFederationOut:
                 "datasets": datasets,
             }
         )
+        if data_model_id is not UNSET:
+            field_dict["data_model_id"] = data_model_id
         if creation_time is not UNSET:
             field_dict["creation_time"] = creation_time
         if data_submitter_organizations_invites_id is not UNSET:
@@ -125,8 +126,6 @@ class GetDataFederationOut:
         description = d.pop("description")
 
         data_format = DataFederationDataFormat(d.pop("data_format"))
-
-        data_model = d.pop("data_model")
 
         id = d.pop("id")
 
@@ -155,6 +154,8 @@ class GetDataFederationOut:
 
             datasets.append(datasets_item)
 
+        data_model_id = d.pop("data_model_id", UNSET)
+
         _creation_time = d.pop("creation_time", UNSET)
         creation_time: Union[Unset, datetime.datetime]
         if isinstance(_creation_time, Unset):
@@ -172,13 +173,13 @@ class GetDataFederationOut:
             name=name,
             description=description,
             data_format=data_format,
-            data_model=data_model,
             id=id,
             organization=organization,
             state=state,
             data_submitter_organizations=data_submitter_organizations,
             research_organizations=research_organizations,
             datasets=datasets,
+            data_model_id=data_model_id,
             creation_time=creation_time,
             data_submitter_organizations_invites_id=data_submitter_organizations_invites_id,
             research_organizations_invites_id=research_organizations_invites_id,

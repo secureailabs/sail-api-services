@@ -24,19 +24,17 @@ def _get_kwargs(
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
+        "follow_redirects": client.follow_redirects,
     }
 
 
 def _parse_response(*, client: Client, response: httpx.Response) -> Optional[GetMultipleOrganizationsOut]:
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception(f"Failure status code: {response.status_code}. Details: {response.text}")
-
     if response.status_code == HTTPStatus.OK:
         response_200 = GetMultipleOrganizationsOut.from_dict(response.json())
 
         return response_200
     if client.raise_on_unexpected_status:
-        raise errors.UnexpectedStatus(f"Unexpected status code: {response.status_code}")
+        raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
@@ -91,7 +89,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetMultipleOrganizationsOut]
+        GetMultipleOrganizationsOut
     """
 
     return sync_detailed(
@@ -138,7 +136,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetMultipleOrganizationsOut]
+        GetMultipleOrganizationsOut
     """
 
     return (

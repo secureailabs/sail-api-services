@@ -32,18 +32,16 @@ def _get_kwargs(
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
+        "follow_redirects": client.follow_redirects,
         "json": json_json_body,
     }
 
 
 def _parse_response(
     *, client: Client, response: httpx.Response
-) -> Optional[Union[HTTPExceptionObj, None, ValidationError]]:
-    if response.status_code < 200 or response.status_code >= 300:
-        raise Exception(f"Failure status code: {response.status_code}. Details: {response.text}")
-
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
     if response.status_code == HTTPStatus.NO_CONTENT:
-        response_204 = cast(None, None)
+        response_204 = cast(Any, None)
         return response_204
     if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
         response_422 = ValidationError.from_dict(response.json())
@@ -58,14 +56,14 @@ def _parse_response(
 
         return response_403
     if client.raise_on_unexpected_status:
-        raise errors.UnexpectedStatus(f"Unexpected status code: {response.status_code}")
+        raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
 def _build_response(
     *, client: Client, response: httpx.Response
-) -> Response[Union[HTTPExceptionObj, None, ValidationError]]:
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -79,21 +77,21 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     json_body: UpdateSecureComputationNodeIn,
-) -> Response[Union[HTTPExceptionObj, None, ValidationError]]:
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Update Secure Computation Node
 
      Update secure computation node information
 
     Args:
         secure_computation_node_id (str): UUID of Secure Computation Node
-        json_body (UpdateSecureComputationNodeIn): Updated Secure Computation Node information
+        json_body (UpdateSecureComputationNodeIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, None, ValidationError]]
+        Response[Union[Any, HTTPExceptionObj, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -115,21 +113,21 @@ def sync(
     *,
     client: AuthenticatedClient,
     json_body: UpdateSecureComputationNodeIn,
-) -> Optional[Union[HTTPExceptionObj, None, ValidationError]]:
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Update Secure Computation Node
 
      Update secure computation node information
 
     Args:
         secure_computation_node_id (str): UUID of Secure Computation Node
-        json_body (UpdateSecureComputationNodeIn): Updated Secure Computation Node information
+        json_body (UpdateSecureComputationNodeIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, None, ValidationError]]
+        Union[Any, HTTPExceptionObj, ValidationError]
     """
 
     return sync_detailed(
@@ -144,21 +142,21 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     json_body: UpdateSecureComputationNodeIn,
-) -> Response[Union[HTTPExceptionObj, None, ValidationError]]:
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Update Secure Computation Node
 
      Update secure computation node information
 
     Args:
         secure_computation_node_id (str): UUID of Secure Computation Node
-        json_body (UpdateSecureComputationNodeIn): Updated Secure Computation Node information
+        json_body (UpdateSecureComputationNodeIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, None, ValidationError]]
+        Response[Union[Any, HTTPExceptionObj, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -178,21 +176,21 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     json_body: UpdateSecureComputationNodeIn,
-) -> Optional[Union[HTTPExceptionObj, None, ValidationError]]:
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Update Secure Computation Node
 
      Update secure computation node information
 
     Args:
         secure_computation_node_id (str): UUID of Secure Computation Node
-        json_body (UpdateSecureComputationNodeIn): Updated Secure Computation Node information
+        json_body (UpdateSecureComputationNodeIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, None, ValidationError]]
+        Union[Any, HTTPExceptionObj, ValidationError]
     """
 
     return (

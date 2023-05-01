@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, Type, TypeVar
+from typing import Any, Dict, List, Type, TypeVar, Union
 
 import attr
 
 from ..models.data_federation_data_format import DataFederationDataFormat
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="RegisterDataFederationIn")
 
@@ -14,13 +15,13 @@ class RegisterDataFederationIn:
         name (str):
         description (str):
         data_format (DataFederationDataFormat): An enumeration.
-        data_model (str):
+        data_model_id (Union[Unset, str]):
     """
 
     name: str
     description: str
     data_format: DataFederationDataFormat
-    data_model: str
+    data_model_id: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -28,7 +29,7 @@ class RegisterDataFederationIn:
         description = self.description
         data_format = self.data_format.value
 
-        data_model = self.data_model
+        data_model_id = self.data_model_id
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -37,9 +38,10 @@ class RegisterDataFederationIn:
                 "name": name,
                 "description": description,
                 "data_format": data_format,
-                "data_model": data_model,
             }
         )
+        if data_model_id is not UNSET:
+            field_dict["data_model_id"] = data_model_id
 
         return field_dict
 
@@ -52,13 +54,13 @@ class RegisterDataFederationIn:
 
         data_format = DataFederationDataFormat(d.pop("data_format"))
 
-        data_model = d.pop("data_model")
+        data_model_id = d.pop("data_model_id", UNSET)
 
         register_data_federation_in = cls(
             name=name,
             description=description,
             data_format=data_format,
-            data_model=data_model,
+            data_model_id=data_model_id,
         )
 
         register_data_federation_in.additional_properties = d

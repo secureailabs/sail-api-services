@@ -6,8 +6,8 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_exception_obj import HTTPExceptionObj
-from ...models.register_data_federation_provision_in import RegisterDataFederationProvisionIn
-from ...models.register_data_federation_provision_out import RegisterDataFederationProvisionOut
+from ...models.register_secure_computation_node_in import RegisterSecureComputationNodeIn
+from ...models.register_secure_computation_node_out import RegisterSecureComputationNodeOut
 from ...models.validation_error import ValidationError
 from ...types import Response
 
@@ -15,9 +15,9 @@ from ...types import Response
 def _get_kwargs(
     *,
     client: AuthenticatedClient,
-    json_body: RegisterDataFederationProvisionIn,
+    json_body: RegisterSecureComputationNodeIn,
 ) -> Dict[str, Any]:
-    url = "{}/data-federations-provisions".format(client.base_url)
+    url = "{}/secure-computation-node".format(client.base_url)
 
     headers: Dict[str, str] = client.get_headers()
     cookies: Dict[str, Any] = client.get_cookies()
@@ -37,9 +37,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Client, response: httpx.Response
-) -> Optional[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]:
+) -> Optional[Union[HTTPExceptionObj, RegisterSecureComputationNodeOut, ValidationError]]:
     if response.status_code == HTTPStatus.CREATED:
-        response_201 = RegisterDataFederationProvisionOut.from_dict(response.json())
+        response_201 = RegisterSecureComputationNodeOut.from_dict(response.json())
 
         return response_201
     if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
@@ -62,7 +62,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Client, response: httpx.Response
-) -> Response[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]:
+) -> Response[Union[HTTPExceptionObj, RegisterSecureComputationNodeOut, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -74,21 +74,21 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    json_body: RegisterDataFederationProvisionIn,
-) -> Response[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]:
-    """Provision Data Federation
+    json_body: RegisterSecureComputationNodeIn,
+) -> Response[Union[HTTPExceptionObj, RegisterSecureComputationNodeOut, ValidationError]]:
+    """Register Secure Computation Node
 
      Provision data federation SCNs
 
     Args:
-        json_body (RegisterDataFederationProvisionIn):
+        json_body (RegisterSecureComputationNodeIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]
+        Response[Union[HTTPExceptionObj, RegisterSecureComputationNodeOut, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -107,21 +107,21 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    json_body: RegisterDataFederationProvisionIn,
-) -> Optional[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]:
-    """Provision Data Federation
+    json_body: RegisterSecureComputationNodeIn,
+) -> Optional[Union[HTTPExceptionObj, RegisterSecureComputationNodeOut, ValidationError]]:
+    """Register Secure Computation Node
 
      Provision data federation SCNs
 
     Args:
-        json_body (RegisterDataFederationProvisionIn):
+        json_body (RegisterSecureComputationNodeIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]
+        Union[HTTPExceptionObj, RegisterSecureComputationNodeOut, ValidationError]
     """
 
     return sync_detailed(
@@ -133,21 +133,21 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    json_body: RegisterDataFederationProvisionIn,
-) -> Response[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]:
-    """Provision Data Federation
+    json_body: RegisterSecureComputationNodeIn,
+) -> Response[Union[HTTPExceptionObj, RegisterSecureComputationNodeOut, ValidationError]]:
+    """Register Secure Computation Node
 
      Provision data federation SCNs
 
     Args:
-        json_body (RegisterDataFederationProvisionIn):
+        json_body (RegisterSecureComputationNodeIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]
+        Response[Union[HTTPExceptionObj, RegisterSecureComputationNodeOut, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -164,21 +164,21 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    json_body: RegisterDataFederationProvisionIn,
-) -> Optional[Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]]:
-    """Provision Data Federation
+    json_body: RegisterSecureComputationNodeIn,
+) -> Optional[Union[HTTPExceptionObj, RegisterSecureComputationNodeOut, ValidationError]]:
+    """Register Secure Computation Node
 
      Provision data federation SCNs
 
     Args:
-        json_body (RegisterDataFederationProvisionIn):
+        json_body (RegisterSecureComputationNodeIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPExceptionObj, RegisterDataFederationProvisionOut, ValidationError]
+        Union[HTTPExceptionObj, RegisterSecureComputationNodeOut, ValidationError]
     """
 
     return (

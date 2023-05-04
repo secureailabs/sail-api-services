@@ -4,31 +4,31 @@ import attr
 
 from ..models.secure_computation_node_size import SecureComputationNodeSize
 
-T = TypeVar("T", bound="RegisterDataFederationProvisionIn")
+T = TypeVar("T", bound="RegisterSecureComputationNodeIn")
 
 
 @attr.s(auto_attribs=True)
-class RegisterDataFederationProvisionIn:
+class RegisterSecureComputationNodeIn:
     """
     Attributes:
         data_federation_id (str):
-        secure_computation_nodes_size (SecureComputationNodeSize): An enumeration.
+        size (SecureComputationNodeSize): An enumeration.
     """
 
     data_federation_id: str
-    secure_computation_nodes_size: SecureComputationNodeSize
+    size: SecureComputationNodeSize
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         data_federation_id = self.data_federation_id
-        secure_computation_nodes_size = self.secure_computation_nodes_size.value
+        size = self.size.value
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "data_federation_id": data_federation_id,
-                "secure_computation_nodes_size": secure_computation_nodes_size,
+                "size": size,
             }
         )
 
@@ -39,15 +39,15 @@ class RegisterDataFederationProvisionIn:
         d = src_dict.copy()
         data_federation_id = d.pop("data_federation_id")
 
-        secure_computation_nodes_size = SecureComputationNodeSize(d.pop("secure_computation_nodes_size"))
+        size = SecureComputationNodeSize(d.pop("size"))
 
-        register_data_federation_provision_in = cls(
+        register_secure_computation_node_in = cls(
             data_federation_id=data_federation_id,
-            secure_computation_nodes_size=secure_computation_nodes_size,
+            size=size,
         )
 
-        register_data_federation_provision_in.additional_properties = d
-        return register_data_federation_provision_in
+        register_secure_computation_node_in.additional_properties = d
+        return register_secure_computation_node_in
 
     @property
     def additional_keys(self) -> List[str]:

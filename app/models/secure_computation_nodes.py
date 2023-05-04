@@ -59,7 +59,6 @@ class DatasetBasicInformation(SailBaseModel):
 
 class SecureComputationNode_Base(SailBaseModel):
     data_federation_id: PyObjectId = Field(...)
-    data_federation_provision_id: PyObjectId = Field(...)
     size: SecureComputationNodeSize = Field(...)
 
 
@@ -75,7 +74,7 @@ class SecureComputationNode_Db(SecureComputationNode_Base):
 
 
 class RegisterSecureComputationNode_In(SecureComputationNode_Base):
-    datasets: List[DatasetInformation] = Field(...)
+    pass
 
 
 class RegisterSecureComputationNode_Out(SailBaseModel):

@@ -12,7 +12,6 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
-import asyncio
 import json
 import time
 from ipaddress import IPv4Address
@@ -25,13 +24,12 @@ from fastapi.encoders import jsonable_encoder
 
 import app.utils.azure as azure
 from app.api.authentication import get_current_user
-from app.api.data_federations import get_existing_dataset_key
-from app.api.dataset_versions import get_dataset_version
+from app.api.data_federations import get_data_federation, get_existing_dataset_key
+from app.api.dataset_versions import get_all_dataset_versions, get_dataset_version
 from app.data import operations as data_service
 from app.log import log_message
 from app.models.authentication import TokenData
 from app.models.common import BasicObjectInfo, PyObjectId
-from app.models.data_federations import DataFederationProvisionState
 from app.models.secure_computation_nodes import (
     DatasetBasicInformation,
     DatasetInformation,
@@ -53,10 +51,19 @@ DB_COLLECTION_SECURE_COMPUTATION_NODE = "secure-computation-node"
 router = APIRouter()
 
 
-########################################################################################################################
+@router.post(
+    path="/secure-computation-node",
+    description="Provision data federation SCNs",
+    response_description="SCN information",
+    response_model=RegisterSecureComputationNode_Out,
+    response_model_by_alias=False,
+    response_model_exclude_unset=True,
+    status_code=status.HTTP_201_CREATED,
+    operation_id="register_secure_computation_node",
+)
 async def register_secure_computation_node(
-    secure_computation_node_req: RegisterSecureComputationNode_In,
-    current_user: TokenData,
+    secure_computation_node_req: RegisterSecureComputationNode_In = Body(description="SCN request body"),
+    current_user: TokenData = Depends(get_current_user),
 ) -> RegisterSecureComputationNode_Out:
     """
     Register a secure computation node
@@ -68,16 +75,54 @@ async def register_secure_computation_node(
     :return: Secure computation node information
     :rtype: RegisterSecureComputationNode_Out
     """
+
+    # Current user organization must be one of the the data federation researcher
+    data_federation_db = await get_data_federation(
+        data_federation_id=secure_computation_node_req.data_federation_id, current_user=current_user
+    )
+    if not data_federation_db:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Data Federation not found")
+
+    # Researcher must be one of the data federation researchers
+    if [
+        organization
+        for organization in data_federation_db.research_organizations
+        if organization.id == current_user.organization_id
+    ] is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Organization must be one of the the data federation researcher",
+        )
+
+    # Get the dataset versions for the data federation
+    datasets = data_federation_db.datasets
+    dataset_info: List[DatasetInformation] = []
+    for dataset in datasets:
+        # Get the dataset versions
+        dataset_id = dataset.id
+        response = await get_all_dataset_versions(dataset_id=dataset_id, current_user=current_user)
+
+        # Get the latest version
+        latest_version = response.dataset_versions[0].id
+
+        dataset_info.append(
+            DatasetInformation(
+                id=dataset_id, version_id=latest_version, data_owner_id=response.dataset_versions[0].organization.id
+            )
+        )
+
     # Add the secure computation node to the database
     secure_computation_node_db = SecureComputationNode_Db(
-        **secure_computation_node_req.dict(),
+        data_federation_id=secure_computation_node_req.data_federation_id,
+        datasets=dataset_info,
+        size=secure_computation_node_req.size,
         researcher_user_id=current_user.id,
         state=SecureComputationNodeState.REQUESTED,
         researcher_id=current_user.organization_id,
     )
 
     dataset_with_keys: List[DatasetInformationWithKey] = []
-    for dataset in secure_computation_node_req.datasets:
+    for dataset in dataset_info:
         # Check if dataset version exist
         dataset_version_db = await get_dataset_version(dataset.version_id, current_user)
         if not dataset_version_db:
@@ -113,7 +158,7 @@ async def register_secure_computation_node(
 ########################################################################################################################
 @router.get(
     path="/secure-computation-node",
-    description="Get list of all the secure_computation_node for the current user and federation provision",
+    description="Get list of all the secure_computation_node for the current user",
     response_description="List of secure_computation_nodes",
     response_model=GetMultipleSecureComputationNode_Out,
     response_model_by_alias=False,
@@ -122,7 +167,6 @@ async def register_secure_computation_node(
     operation_id="get_all_secure_computation_nodes",
 )
 async def get_all_secure_computation_nodes(
-    data_federation_provision_id: PyObjectId = Query(description="Data federation provision id"),
     current_user: TokenData = Depends(get_current_user),
 ) -> GetMultipleSecureComputationNode_Out:
     from app.api.data_federations import get_data_federation
@@ -130,7 +174,6 @@ async def get_all_secure_computation_nodes(
     query = {
         "researcher_id": str(current_user.organization_id),
         "researcher_user_id": str(current_user.id),
-        "data_federation_provision_id": str(data_federation_provision_id),
     }
     secure_computation_nodes = await data_service.find_by_query(DB_COLLECTION_SECURE_COMPUTATION_NODE, query)
 
@@ -187,7 +230,6 @@ async def get_all_secure_computation_nodes(
     return GetMultipleSecureComputationNode_Out(secure_computation_nodes=response_secure_computation_nodes)
 
 
-########################################################################################################################
 @router.get(
     path="/secure-computation-node/{secure_computation_node_id}",
     description="Get the information about a secure computation node",
@@ -256,7 +298,6 @@ async def get_secure_computation_node(
     return response_secure_computation_node
 
 
-########################################################################################################################
 @router.put(
     path="/secure-computation-node/{secure_computation_node_id}",
     description="Update secure computation node information",
@@ -300,32 +341,35 @@ async def update_secure_computation_node(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
-async def deprovision_secure_computation_nodes(
-    data_federation_provision_id: PyObjectId,
+@router.delete(
+    path="/secure-computation-node/{secure_computation_node_id}",
+    description="Deprovision SCN",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="deprovision_secure_computation_node",
+)
+async def deprovision_secure_computation_node(
+    secure_computation_node_id: PyObjectId,
     current_user: TokenData = Depends(get_current_user),
 ):
-    # Update the secure computation node
-    await data_service.update_many(
+    # Update the secure computation node and unset ipaddress
+    await data_service.update_one(
         DB_COLLECTION_SECURE_COMPUTATION_NODE,
         {
-            "data_federation_provision_id": str(data_federation_provision_id),
+            "_id": str(secure_computation_node_id),
             "researcher_id": str(current_user.organization_id),
         },
         {"$set": {"state": "DELETING", "ipaddress": "0.0.0.0"}},
     )
 
     # Start a background task to deprovision the secure computation node which will update the status
-    add_async_task(delete_resource_group(data_federation_provision_id, current_user))
+    add_async_task(delete_resource_group(secure_computation_node_id, current_user))
 
-    message = f"[Deprovision Secure Computation Nodes]: user_id:{current_user.id}, data_federation_provision_id: {data_federation_provision_id}"
+    message = f"[Deprovision Secure Computation Nodes]: user_id:{current_user.id}, secure_computation_node_id: {secure_computation_node_id}"
     await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
-# TODO: these are temporary functions. They should be removed after the HANU is ready
 async def provision_secure_computation_node(
     secure_computation_node_db: SecureComputationNode_Db, datasets: List[DatasetInformationWithKey]
 ):
@@ -416,7 +460,6 @@ def create_cloud_init_file(initialization_json: dict, image_name: str):
     return cloud_init_file
 
 
-########################################################################################################################
 async def provision_virtual_machine(
     virtual_machine_info_db: SecureComputationNode_Db,
     template_name: str,
@@ -443,7 +486,7 @@ async def provision_virtual_machine(
 
     # The name of the resource group is same as the data federation provision id
     owner = get_secret("owner")
-    resource_group_name = f"{owner}-{str(virtual_machine_info_db.data_federation_provision_id)}-scn"
+    resource_group_name = f"{owner}-{str(virtual_machine_info_db.id)}-scn"
 
     # Deploy the smart broker
     account_credentials = await azure.authenticate()
@@ -469,7 +512,6 @@ async def provision_virtual_machine(
     return virtual_machine_info_db
 
 
-########################################################################################################################
 async def initialize_virtual_machine(virtual_machine_info_db: SecureComputationNode_Db, package_filename: str):
     """
     Initialize a virtual machine
@@ -507,7 +549,7 @@ async def initialize_virtual_machine(virtual_machine_info_db: SecureComputationN
         raise Exception("Failed to upload package. Timeout.")
 
     # Update the database to mark the VM as WAITING_FOR_DATA
-    virtual_machine_info_db.state = SecureComputationNodeState.WAITING_FOR_DATA
+    virtual_machine_info_db.state = SecureComputationNodeState.READY
     await data_service.update_one(
         DB_COLLECTION_SECURE_COMPUTATION_NODE,
         {"_id": str(virtual_machine_info_db.id)},
@@ -515,7 +557,7 @@ async def initialize_virtual_machine(virtual_machine_info_db: SecureComputationN
     )
 
 
-async def delete_resource_group(data_federation_provision_id: PyObjectId, current_user: TokenData):
+async def delete_resource_group(secure_computation_node_id: PyObjectId, current_user: TokenData):
     """
     Delete a resource group
 
@@ -524,15 +566,12 @@ async def delete_resource_group(data_federation_provision_id: PyObjectId, curren
     :param current_user: current user information
     :type current_user: TokenData
     """
-    from app.api.data_federations_provisions import update_provision_state
-
     try:
         # Delete the scn resource group
         owner = get_secret("owner")
-        deployment_name = f"{owner}-{str(data_federation_provision_id)}-scn"
+        deployment_name = f"{owner}-{str(secure_computation_node_id)}-scn"
 
         account_credentials = await azure.authenticate()
-
         delete_response = await azure.delete_resouce_group(account_credentials, deployment_name)
         if delete_response.status != "Success":
             raise Exception(delete_response.note)
@@ -541,15 +580,10 @@ async def delete_resource_group(data_federation_provision_id: PyObjectId, curren
         await data_service.update_many(
             DB_COLLECTION_SECURE_COMPUTATION_NODE,
             {
-                "data_federation_provision_id": str(data_federation_provision_id),
+                "_id": str(secure_computation_node_id),
                 "researcher_id": str(current_user.organization_id),
             },
             {"$set": {"state": "DELETED"}},
-        )
-
-        # Update the federation status as deleted
-        await update_provision_state(
-            provision_id=data_federation_provision_id, state=DataFederationProvisionState.DELETED
         )
 
     except Exception as exception:
@@ -558,13 +592,8 @@ async def delete_resource_group(data_federation_provision_id: PyObjectId, curren
         await data_service.update_many(
             DB_COLLECTION_SECURE_COMPUTATION_NODE,
             {
-                "data_federation_provision_id": str(data_federation_provision_id),
+                "_id": str(secure_computation_node_id),
                 "researcher_id": str(current_user.organization_id),
             },
             {"$set": {"state": "DELETE_FAILED"}},
-        )
-
-        # Update the federation status as delete failed
-        await update_provision_state(
-            provision_id=data_federation_provision_id, state=DataFederationProvisionState.DELETION_FAILED
         )

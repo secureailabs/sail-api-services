@@ -19,7 +19,6 @@ from typing import List, Optional
 from pydantic import Field, StrictStr
 
 from app.models.common import BasicObjectInfo, KeyVaultObject, PyObjectId, SailBaseModel
-from app.models.secure_computation_nodes import SecureComputationNodeSize
 
 
 class DataFederationState(Enum):
@@ -136,49 +135,3 @@ class GetInvite_Out(SailBaseModel):
 
 class GetMultipleInvite_Out(SailBaseModel):
     invites: List[GetInvite_Out] = Field(...)
-
-
-class DataFederationProvisionState(Enum):
-    CREATING = "CREATING"
-    CREATED = "CREATED"
-    CREATION_FAILED = "CREATION_FAILED"
-    DELETING = "DELETING"
-    DELETED = "DELETED"
-    DELETION_FAILED = "DELETION_FAILED"
-
-
-class DataFederationProvision_Base(SailBaseModel):
-    data_federation_id: PyObjectId = Field(...)
-    secure_computation_nodes_size: SecureComputationNodeSize = Field(...)
-
-
-class DataFederationProvision_Db(DataFederationProvision_Base):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    creation_time: datetime = Field(default_factory=datetime.utcnow)
-    organization_id: PyObjectId = Field(...)
-    secure_computation_node_id: PyObjectId = Field(...)
-    state: DataFederationProvisionState = Field(...)
-
-
-class GetDataFederationProvision(DataFederationProvision_Base):
-    id: PyObjectId = Field(alias="_id")
-    creation_time: datetime = Field(default_factory=datetime.utcnow)
-    organization_id: PyObjectId = Field(...)
-    secure_computation_node_id: PyObjectId = Field(...)
-    state: DataFederationProvisionState = Field(...)
-
-
-class GetMultipleDataFederationProvision_Out(SailBaseModel):
-    data_federation_provisions: List[GetDataFederationProvision] = Field(...)
-
-
-class RegisterDataFederationProvision_In(DataFederationProvision_Base):
-    pass
-
-
-class RegisterDataFederationProvision_Out(DataFederationProvision_Base):
-    id: PyObjectId = Field(alias="_id")
-    creation_time: datetime = Field(...)
-    organization_id: PyObjectId = Field(...)
-    secure_computation_node_id: PyObjectId = Field(...)
-    state: DataFederationProvisionState = Field(...)

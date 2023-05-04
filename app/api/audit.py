@@ -21,8 +21,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import StrictStr
 
 from app.api.authentication import get_current_user
-from app.api.data_federations_provisions import get_all_data_federation_provision_info
 from app.api.datasets import get_all_datasets
+from app.api.secure_computation_nodes import get_all_secure_computation_nodes
 from app.models.accounts import UserRole
 from app.models.audit import QueryResult
 from app.models.authentication import TokenData
@@ -180,13 +180,12 @@ async def query_computation_by_user_id(
 
     # the user is research org admin, can only get info related to the VMs belongs to the org.
     elif current_user == UserRole.ORGANIZATION_ADMIN:
-
-        provision_db = get_all_data_federation_provision_info(current_user)
-        provision_db = provision_db.data_federation_provisions
+        provision_db = await get_all_secure_computation_nodes(current_user)
+        provision_db = provision_db.secure_computation_nodes
 
         provision_VMs = []
         for provision in provision_db:
-            provision_VMs.extend(provision.secure_computation_nodes_id)
+            provision_VMs.extend(provision.id)
 
         if len(provision_VMs) != 0:
             scn_ids = ""
@@ -199,7 +198,6 @@ async def query_computation_by_user_id(
 
     # the user is the data owner admin, can only get info about the data they own.
     elif current_user == UserRole.DATASET_ADMIN:
-
         datasets = await get_all_datasets(current_user)
         datasets = datasets.datasets
 

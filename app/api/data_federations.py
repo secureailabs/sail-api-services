@@ -123,19 +123,21 @@ async def get_all_data_federations(
     data_submitter_id: Optional[PyObjectId] = Query(
         default=None, description="UUID of Data Submitter in the data federation"
     ),
-    researcher_id: Optional[PyObjectId] = Query(default=None, description="UUID of Researcher in the data federation"),
+    research_organizations_id: Optional[PyObjectId] = Query(
+        default=None, description="UUID of Researcher in the data federation"
+    ),
     dataset_id: Optional[PyObjectId] = Query(default=None, description="UUID of Dataset in the data federation"),
     current_user: TokenData = Depends(get_current_user),
 ) -> GetMultipleDataFederation_Out:
     if (data_submitter_id) and (data_submitter_id == current_user.organization_id):
         query = {"data_submitters.organization_id": str(current_user.organization_id)}
-    elif (researcher_id) and (researcher_id == current_user.organization_id):
-        query = {"researcher_id": {"$all": [str(current_user.organization_id)]}}
+    elif (research_organizations_id) and (research_organizations_id == current_user.organization_id):
+        query = {"research_organizations_id": {"$all": [str(current_user.organization_id)]}}
     elif dataset_id:
         query = {"dataset_id": {"$all": [str(dataset_id)]}}
     elif current_user.role is UserRole.SAIL_ADMIN:
         query = {}
-    elif (not data_submitter_id) and (not researcher_id) and (not dataset_id):
+    elif (not data_submitter_id) and (not research_organizations_id) and (not dataset_id):
         query = {
             "$or": [
                 {"organization_id": str(current_user.organization_id)},

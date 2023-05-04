@@ -3,7 +3,6 @@
 from .basic_object_info import BasicObjectInfo
 from .body_login import BodyLogin
 from .data_federation_data_format import DataFederationDataFormat
-from .data_federation_provision_state import DataFederationProvisionState
 from .data_federation_state import DataFederationState
 from .data_model_dataframe_state import DataModelDataframeState
 from .data_model_series_state import DataModelSeriesState
@@ -14,7 +13,6 @@ from .dataset_format import DatasetFormat
 from .dataset_state import DatasetState
 from .dataset_version_state import DatasetVersionState
 from .get_data_federation_out import GetDataFederationOut
-from .get_data_federation_provision import GetDataFederationProvision
 from .get_data_model_dataframe_out import GetDataModelDataframeOut
 from .get_data_model_out import GetDataModelOut
 from .get_data_model_series_out import GetDataModelSeriesOut
@@ -23,7 +21,6 @@ from .get_dataset_version_connection_string_out import GetDatasetVersionConnecti
 from .get_dataset_version_out import GetDatasetVersionOut
 from .get_invite_out import GetInviteOut
 from .get_multiple_data_federation_out import GetMultipleDataFederationOut
-from .get_multiple_data_federation_provision_out import GetMultipleDataFederationProvisionOut
 from .get_multiple_data_model_dataframe_out import GetMultipleDataModelDataframeOut
 from .get_multiple_data_model_out import GetMultipleDataModelOut
 from .get_multiple_data_model_series_out import GetMultipleDataModelSeriesOut
@@ -46,8 +43,6 @@ from .query_result_data import QueryResultData
 from .refresh_token_in import RefreshTokenIn
 from .register_data_federation_in import RegisterDataFederationIn
 from .register_data_federation_out import RegisterDataFederationOut
-from .register_data_federation_provision_in import RegisterDataFederationProvisionIn
-from .register_data_federation_provision_out import RegisterDataFederationProvisionOut
 from .register_data_model_dataframe_in import RegisterDataModelDataframeIn
 from .register_data_model_dataframe_out import RegisterDataModelDataframeOut
 from .register_data_model_in import RegisterDataModelIn
@@ -60,6 +55,8 @@ from .register_dataset_version_in import RegisterDatasetVersionIn
 from .register_dataset_version_out import RegisterDatasetVersionOut
 from .register_organization_in import RegisterOrganizationIn
 from .register_organization_out import RegisterOrganizationOut
+from .register_secure_computation_node_in import RegisterSecureComputationNodeIn
+from .register_secure_computation_node_out import RegisterSecureComputationNodeOut
 from .register_user_in import RegisterUserIn
 from .register_user_out import RegisterUserOut
 from .secure_computation_node_size import SecureComputationNodeSize
@@ -83,7 +80,6 @@ __all__ = (
     "BasicObjectInfo",
     "BodyLogin",
     "DataFederationDataFormat",
-    "DataFederationProvisionState",
     "DataFederationState",
     "DataModelDataframeState",
     "DataModelSeriesState",
@@ -94,7 +90,6 @@ __all__ = (
     "DatasetState",
     "DatasetVersionState",
     "GetDataFederationOut",
-    "GetDataFederationProvision",
     "GetDataModelDataframeOut",
     "GetDataModelOut",
     "GetDataModelSeriesOut",
@@ -103,7 +98,6 @@ __all__ = (
     "GetDatasetVersionOut",
     "GetInviteOut",
     "GetMultipleDataFederationOut",
-    "GetMultipleDataFederationProvisionOut",
     "GetMultipleDataModelDataframeOut",
     "GetMultipleDataModelOut",
     "GetMultipleDataModelSeriesOut",
@@ -126,8 +120,6 @@ __all__ = (
     "RefreshTokenIn",
     "RegisterDataFederationIn",
     "RegisterDataFederationOut",
-    "RegisterDataFederationProvisionIn",
-    "RegisterDataFederationProvisionOut",
     "RegisterDataModelDataframeIn",
     "RegisterDataModelDataframeOut",
     "RegisterDataModelIn",
@@ -140,6 +132,8 @@ __all__ = (
     "RegisterDatasetVersionOut",
     "RegisterOrganizationIn",
     "RegisterOrganizationOut",
+    "RegisterSecureComputationNodeIn",
+    "RegisterSecureComputationNodeOut",
     "RegisterUserIn",
     "RegisterUserOut",
     "SecureComputationNodeSize",

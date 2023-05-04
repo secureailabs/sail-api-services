@@ -1,27 +1,28 @@
 from http import HTTPStatus
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, cast
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.get_data_federation_provision import GetDataFederationProvision
 from ...models.validation_error import ValidationError
 from ...types import Response
 
 
 def _get_kwargs(
-    provision_id: str,
+    secure_computation_node_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Dict[str, Any]:
-    url = "{}/data-federations-provsions/{provision_id}".format(client.base_url, provision_id=provision_id)
+    url = "{}/secure-computation-node/{secure_computation_node_id}".format(
+        client.base_url, secure_computation_node_id=secure_computation_node_id
+    )
 
     headers: Dict[str, str] = client.get_headers()
     cookies: Dict[str, Any] = client.get_cookies()
 
     return {
-        "method": "get",
+        "method": "delete",
         "url": url,
         "headers": headers,
         "cookies": cookies,
@@ -30,13 +31,10 @@ def _get_kwargs(
     }
 
 
-def _parse_response(
-    *, client: Client, response: httpx.Response
-) -> Optional[Union[GetDataFederationProvision, ValidationError]]:
-    if response.status_code == HTTPStatus.OK:
-        response_200 = GetDataFederationProvision.from_dict(response.json())
-
-        return response_200
+def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Union[Any, ValidationError]]:
+    if response.status_code == HTTPStatus.NO_CONTENT:
+        response_204 = cast(Any, None)
+        return response_204
     if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
         response_422 = ValidationError.from_dict(response.json())
 
@@ -47,9 +45,7 @@ def _parse_response(
         return None
 
 
-def _build_response(
-    *, client: Client, response: httpx.Response
-) -> Response[Union[GetDataFederationProvision, ValidationError]]:
+def _build_response(*, client: Client, response: httpx.Response) -> Response[Union[Any, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -59,27 +55,27 @@ def _build_response(
 
 
 def sync_detailed(
-    provision_id: str,
+    secure_computation_node_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[GetDataFederationProvision, ValidationError]]:
-    """Get Data Federation Provision Info
+) -> Response[Union[Any, ValidationError]]:
+    """Deprovision Secure Computation Node
 
-     Get data federation provision SCNs
+     Deprovision SCN
 
     Args:
-        provision_id (str): Data Federation Provision Id
+        secure_computation_node_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetDataFederationProvision, ValidationError]]
+        Response[Union[Any, ValidationError]]
     """
 
     kwargs = _get_kwargs(
-        provision_id=provision_id,
+        secure_computation_node_id=secure_computation_node_id,
         client=client,
     )
 
@@ -92,53 +88,53 @@ def sync_detailed(
 
 
 def sync(
-    provision_id: str,
+    secure_computation_node_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[GetDataFederationProvision, ValidationError]]:
-    """Get Data Federation Provision Info
+) -> Optional[Union[Any, ValidationError]]:
+    """Deprovision Secure Computation Node
 
-     Get data federation provision SCNs
+     Deprovision SCN
 
     Args:
-        provision_id (str): Data Federation Provision Id
+        secure_computation_node_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetDataFederationProvision, ValidationError]
+        Union[Any, ValidationError]
     """
 
     return sync_detailed(
-        provision_id=provision_id,
+        secure_computation_node_id=secure_computation_node_id,
         client=client,
     ).parsed
 
 
 async def asyncio_detailed(
-    provision_id: str,
+    secure_computation_node_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[GetDataFederationProvision, ValidationError]]:
-    """Get Data Federation Provision Info
+) -> Response[Union[Any, ValidationError]]:
+    """Deprovision Secure Computation Node
 
-     Get data federation provision SCNs
+     Deprovision SCN
 
     Args:
-        provision_id (str): Data Federation Provision Id
+        secure_computation_node_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetDataFederationProvision, ValidationError]]
+        Response[Union[Any, ValidationError]]
     """
 
     kwargs = _get_kwargs(
-        provision_id=provision_id,
+        secure_computation_node_id=secure_computation_node_id,
         client=client,
     )
 
@@ -149,28 +145,28 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    provision_id: str,
+    secure_computation_node_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[GetDataFederationProvision, ValidationError]]:
-    """Get Data Federation Provision Info
+) -> Optional[Union[Any, ValidationError]]:
+    """Deprovision Secure Computation Node
 
-     Get data federation provision SCNs
+     Deprovision SCN
 
     Args:
-        provision_id (str): Data Federation Provision Id
+        secure_computation_node_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetDataFederationProvision, ValidationError]
+        Union[Any, ValidationError]
     """
 
     return (
         await asyncio_detailed(
-            provision_id=provision_id,
+            secure_computation_node_id=secure_computation_node_id,
             client=client,
         )
     ).parsed

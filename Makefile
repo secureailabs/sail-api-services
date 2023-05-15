@@ -9,6 +9,9 @@ run:
 build_image:
 	@./scripts.sh build_image apiservices
 
+run_image:
+	@./scripts.sh run_image apiservices
+
 push_image: build_image
 	@./scripts.sh push_image_to_registry apiservices
 

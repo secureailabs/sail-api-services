@@ -83,4 +83,20 @@ export AZURE_CLIENT_SECRET="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 export DOCKER_REGISTRY_NAME="developmentdockerregistry"
 ```
 
+## Local deployment
 
+### Build the docker image
+
+```
+make build_image
+```
+
+### Run the docker image
+
+```
+make run_image
+```
+Note: make sure the InitializationVevtor.json file is present in the root directory of the project
+
+### Populate the database with test data
+Refer to the README.md in the Engineering/database-initialization folder.

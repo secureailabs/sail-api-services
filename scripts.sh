@@ -50,6 +50,11 @@ build_image() {
     docker build -t $1 -f "docker/Dockerfile" .
 }
 
+# Run the docker image
+run_image() {
+    check_docker
+    docker run -it -p 8000:8001 -v $(pwd)/certs:/etc/nginx/certs -v $(pwd)/InitializationVector.json:/InitializationVector.json $1
+}
 
 generate_client() {
     generatedDir="generated"

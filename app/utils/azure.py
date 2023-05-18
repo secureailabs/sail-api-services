@@ -289,14 +289,16 @@ async def create_resource_group(account_credentials: AzureCredentials, resource_
     client = ResourceManagementClient(account_credentials.credentials, account_credentials.subscription_id)  # type: ignore
     response: ResourceGroup = await client.resource_groups.create_or_update(
         resource_group_name,
-        {
-            "location": account_credentials.location,
-            "tags": {
+        parameters=ResourceGroup(
+            location=account_credentials.location,
+            tags={
                 "module": module_name,
             },
-        },
-    )  # type: ignore
-    return response.properties.provisioning_state  # type: ignore
+        ),
+    )
+    if response.properties is None:
+        raise Exception("Unable to create resource group")
+    return response.properties.provisioning_state
 
 
 async def authenticate() -> AzureCredentials:
@@ -390,8 +392,10 @@ async def get_ip(account_credentials: AzureCredentials, resource_group_name: str
     :rtype: str
     """
     client = NetworkManagementClient(account_credentials.credentials, account_credentials.subscription_id)  # type: ignore
-    foo = await client.public_ip_addresses.get(resource_group_name, ip_resource_name)
-    return foo.ip_address
+    public_ip_address = await client.public_ip_addresses.get(resource_group_name, ip_resource_name)
+    if public_ip_address.ip_address is None:
+        raise Exception("Unable to get IP address")
+    return public_ip_address.ip_address
 
 
 async def get_private_ip(
@@ -411,6 +415,13 @@ async def get_private_ip(
     """
     client = NetworkManagementClient(account_credentials.credentials, account_credentials.subscription_id)  # type: ignore
     network_interfaces = await client.network_interfaces.get(resource_group_name, network_interface_name)
+
+    if network_interfaces.ip_configurations is None:
+        raise Exception("Unable to get IP address")
+
+    if network_interfaces.ip_configurations[0].private_ip_address is None:
+        raise Exception("Unable to get IP address")
+
     return network_interfaces.ip_configurations[0].private_ip_address
 
 

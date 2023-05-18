@@ -14,12 +14,10 @@
 
 from datetime import datetime
 from enum import Enum
-from ipaddress import IPv4Address
 from typing import List, Optional
 
 from pydantic import Field, StrictStr
 
-from app.api import datasets
 from app.models.common import BasicObjectInfo, PyObjectId, SailBaseModel
 
 
@@ -68,7 +66,7 @@ class SecureComputationNode_Db(SecureComputationNode_Base):
     researcher_user_id: PyObjectId = Field(...)
     state: SecureComputationNodeState = Field(...)
     detail: Optional[StrictStr] = Field(default=None)
-    ipaddress: Optional[IPv4Address] = Field(default=None)
+    url: Optional[StrictStr] = Field(default=None)
     researcher_id: PyObjectId = Field(default=None)
     datasets: List[DatasetInformation] = Field(...)
 
@@ -90,7 +88,7 @@ class GetSecureComputationNode_Out(SailBaseModel):
     timestamp: datetime = Field(...)
     state: SecureComputationNodeState = Field(...)
     detail: Optional[StrictStr] = Field(default=None)
-    ipaddress: Optional[IPv4Address] = Field(default=None)
+    url: Optional[StrictStr] = Field(default=None)
 
 
 class GetMultipleSecureComputationNode_Out(SailBaseModel):

@@ -13,14 +13,14 @@
 # -------------------------------------------------------------------------------
 
 import json
-import time
-from ipaddress import IPv4Address
 from typing import List
 
-import aiohttp
 import yaml
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Response, status
 from fastapi.encoders import jsonable_encoder
+from sail_dns_management_client import Client as DNSClient
+from sail_dns_management_client.api.default import add_domain_dns_post
+from sail_dns_management_client.models import DomainData
 
 import app.utils.azure as azure
 from app.api.authentication import get_current_user
@@ -219,7 +219,7 @@ async def get_all_secure_computation_nodes(
                 timestamp=secure_computation_node.timestamp,
                 state=secure_computation_node.state,
                 detail=secure_computation_node.detail,
-                ipaddress=secure_computation_node.ipaddress,
+                url=secure_computation_node.url,
             )
 
             response_secure_computation_nodes.append(response_secure_computation_node)
@@ -289,7 +289,7 @@ async def get_secure_computation_node(
         timestamp=secure_computation_node.timestamp,
         state=secure_computation_node.state,
         detail=secure_computation_node.detail,
-        ipaddress=secure_computation_node.ipaddress,
+        url=secure_computation_node.url,
     )
 
     message = f"[Get Secure Computation Node]: user_id:{current_user.id}, SCN_id: {secure_computation_node_id}"
@@ -351,14 +351,14 @@ async def deprovision_secure_computation_node(
     secure_computation_node_id: PyObjectId,
     current_user: TokenData = Depends(get_current_user),
 ):
-    # Update the secure computation node and unset ipaddress
+    # Update the secure computation node and unset url
     await data_service.update_one(
         DB_COLLECTION_SECURE_COMPUTATION_NODE,
         {
             "_id": str(secure_computation_node_id),
             "researcher_id": str(current_user.organization_id),
         },
-        {"$set": {"state": "DELETING", "ipaddress": "0.0.0.0"}},
+        {"$set": {"state": "DELETING", "url": ""}},
     )
 
     # Start a background task to deprovision the secure computation node which will update the status
@@ -402,8 +402,13 @@ async def provision_secure_computation_node(
             secure_computation_node_db, "securecomputationnode", jsonable_encoder(securecomputationnode_json)
         )
 
-        # Initilize the secure computation node
-        await initialize_virtual_machine(secure_computation_node_db, "rpcrelated.tar.gz")
+        # Update the database to mark the VM as WAITING_FOR_DATA
+        secure_computation_node_db.state = SecureComputationNodeState.READY
+        await data_service.update_one(
+            DB_COLLECTION_SECURE_COMPUTATION_NODE,
+            {"_id": str(secure_computation_node_db.id)},
+            {"$set": jsonable_encoder(secure_computation_node_db)},
+        )
 
     except Exception as exception:
         print(exception)
@@ -447,7 +452,7 @@ def create_cloud_init_file(initialization_json: dict, image_name: str):
             get_secret("docker_registry_username"),
             get_secret("docker_registry_password"),
         ),
-        "sudo docker run -dit {0} -v /opt/{3}_dir:/app -v /opt/certs:/etc/nginx/certs --name {3} {1}/{3}:{2}".format(
+        "sudo docker run -dit {0} -v /etc/initialization.json:/InitializationVector.json -v /opt/certs:/etc/nginx/certs --name {3} {1}/{3}:{2}".format(
             get_secret(f"{image_name}_docker_params"),
             get_secret("docker_registry_url"),
             get_secret(f"{image_name}_image_tag"),
@@ -500,8 +505,22 @@ async def provision_virtual_machine(
     if deploy_response.status != "Success":
         raise Exception(deploy_response.note)
 
+    # Update the DNS entry for the scn
+    dns_ip = get_secret("dns_ip")
+    dns_client = DNSClient(
+        base_url=f"https://{dns_ip}:8000",
+        verify_ssl=False,
+        raise_on_unexpected_status=True,
+        timeout=30,
+        follow_redirects=True,
+    )
+
+    dns_entry = f"{str(virtual_machine_info_db.id)}-scn.{get_secret('base_domain')}"
+    request = DomainData(ip=deploy_response.ip_address, domain=f"{dns_entry}.")
+    add_domain_dns_post.sync(client=dns_client, json_body=request)
+
     # Update the database to mark the VM as INITIALIZING
-    virtual_machine_info_db.ipaddress = IPv4Address(deploy_response.ip_address)
+    virtual_machine_info_db.url = dns_entry
     virtual_machine_info_db.state = SecureComputationNodeState.INITIALIZING
     await data_service.update_one(
         DB_COLLECTION_SECURE_COMPUTATION_NODE,
@@ -510,51 +529,6 @@ async def provision_virtual_machine(
     )
 
     return virtual_machine_info_db
-
-
-async def initialize_virtual_machine(virtual_machine_info_db: SecureComputationNode_Db, package_filename: str):
-    """
-    Initialize a virtual machine
-
-    :param virtual_machine_info_db: virtual machine information
-    :type virtual_machine_info_db: SecureComputationNode_Db
-    :param package_filename: package filename
-    :type package_filename: str
-    """
-    # try for 5 minutes with a 15 second timeout for each request
-    uploaded = False
-    for _ in range(20):
-        try:
-            headers = {"accept": "application/json"}
-            files = {
-                "initialization_vector": open(str(virtual_machine_info_db.id), "rb"),
-                "bin_package": open(package_filename, "rb"),
-            }
-            async with aiohttp.ClientSession() as session:
-                async with session.put(
-                    "https://" + str(virtual_machine_info_db.ipaddress) + ":9090/initialization-data",
-                    headers=headers,
-                    data=files,
-                    verify_ssl=False,
-                ) as resp:
-                    print("Upload package status: ", resp.status)
-                    if resp.status == 200:
-                        uploaded = True
-            break
-        except Exception as exception:
-            print(f"upload_package: {str(exception)}, retrying...")
-            time.sleep(15)
-
-    if not uploaded:
-        raise Exception("Failed to upload package. Timeout.")
-
-    # Update the database to mark the VM as WAITING_FOR_DATA
-    virtual_machine_info_db.state = SecureComputationNodeState.READY
-    await data_service.update_one(
-        DB_COLLECTION_SECURE_COMPUTATION_NODE,
-        {"_id": str(virtual_machine_info_db.id)},
-        {"$set": jsonable_encoder(virtual_machine_info_db)},
-    )
 
 
 async def delete_resource_group(secure_computation_node_id: PyObjectId, current_user: TokenData):

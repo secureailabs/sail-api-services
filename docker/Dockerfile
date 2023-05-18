@@ -45,8 +45,10 @@ COPY docker/promtail_linux_amd64 /promtail_linux_amd64
 COPY docker/Entrypoint.sh /Entrypoint.sh
 RUN chmod +x /Entrypoint.sh
 
+COPY sail_dns_management_client-0.1.0-py3-none-any.whl /sail_dns_management_client-0.1.0-py3-none-any.whl
+RUN pip install --no-cache-dir /sail_dns_management_client-0.1.0-py3-none-any.whl
+
 COPY app /app
 COPY sailvm.json /sailvm.json
-COPY rpcrelated.tar.gz /rpcrelated.tar.gz
 
 ENTRYPOINT [ "/Entrypoint.sh" ]

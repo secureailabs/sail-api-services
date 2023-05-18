@@ -27,7 +27,7 @@ class GetSecureComputationNodeOut:
         state (SecureComputationNodeState): An enumeration.
         researcher (Union[Unset, BasicObjectInfo]):
         detail (Union[Unset, str]):
-        ipaddress (Union[Unset, str]):
+        url (Union[Unset, str]):
     """
 
     id: str
@@ -38,7 +38,7 @@ class GetSecureComputationNodeOut:
     state: SecureComputationNodeState
     researcher: Union[Unset, "BasicObjectInfo"] = UNSET
     detail: Union[Unset, str] = UNSET
-    ipaddress: Union[Unset, str] = UNSET
+    url: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -61,7 +61,7 @@ class GetSecureComputationNodeOut:
             researcher = self.researcher.to_dict()
 
         detail = self.detail
-        ipaddress = self.ipaddress
+        url = self.url
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -79,8 +79,8 @@ class GetSecureComputationNodeOut:
             field_dict["researcher"] = researcher
         if detail is not UNSET:
             field_dict["detail"] = detail
-        if ipaddress is not UNSET:
-            field_dict["ipaddress"] = ipaddress
+        if url is not UNSET:
+            field_dict["url"] = url
 
         return field_dict
 
@@ -116,7 +116,7 @@ class GetSecureComputationNodeOut:
 
         detail = d.pop("detail", UNSET)
 
-        ipaddress = d.pop("ipaddress", UNSET)
+        url = d.pop("url", UNSET)
 
         get_secure_computation_node_out = cls(
             id=id,
@@ -127,7 +127,7 @@ class GetSecureComputationNodeOut:
             state=state,
             researcher=researcher,
             detail=detail,
-            ipaddress=ipaddress,
+            url=url,
         )
 
         get_secure_computation_node_out.additional_properties = d

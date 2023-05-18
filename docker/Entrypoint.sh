@@ -3,7 +3,7 @@ set -e
 imageName=apiservices
 
 # Start the nginx server
-nginx -g 'daemon off;' 2>&1 | tee /app/nginx.log &
+# nginx -g 'daemon off;' 2>&1 | tee /app/nginx.log &
 
 # Use the InitializationVector to populate the IP address of the audit services
 auditIP=$(cat /InitializationVector.json | jq -r '.audit_service_ip')

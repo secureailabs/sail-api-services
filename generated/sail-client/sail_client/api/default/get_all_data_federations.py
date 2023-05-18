@@ -15,7 +15,7 @@ def _get_kwargs(
     *,
     client: AuthenticatedClient,
     data_submitter_id: Union[Unset, None, str] = UNSET,
-    researcher_id: Union[Unset, None, str] = UNSET,
+    research_organizations_id: Union[Unset, None, str] = UNSET,
     dataset_id: Union[Unset, None, str] = UNSET,
 ) -> Dict[str, Any]:
     url = "{}/data-federations".format(client.base_url)
@@ -26,7 +26,7 @@ def _get_kwargs(
     params: Dict[str, Any] = {}
     params["data_submitter_id"] = data_submitter_id
 
-    params["researcher_id"] = researcher_id
+    params["research_organizations_id"] = research_organizations_id
 
     params["dataset_id"] = dataset_id
 
@@ -83,7 +83,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     data_submitter_id: Union[Unset, None, str] = UNSET,
-    researcher_id: Union[Unset, None, str] = UNSET,
+    research_organizations_id: Union[Unset, None, str] = UNSET,
     dataset_id: Union[Unset, None, str] = UNSET,
 ) -> Response[Union[GetMultipleDataFederationOut, HTTPExceptionObj, ValidationError]]:
     """Get All Data Federations
@@ -92,7 +92,8 @@ def sync_detailed(
 
     Args:
         data_submitter_id (Union[Unset, None, str]): UUID of Data Submitter in the data federation
-        researcher_id (Union[Unset, None, str]): UUID of Researcher in the data federation
+        research_organizations_id (Union[Unset, None, str]): UUID of Researcher in the data
+            federation
         dataset_id (Union[Unset, None, str]): UUID of Dataset in the data federation
 
     Raises:
@@ -106,7 +107,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         client=client,
         data_submitter_id=data_submitter_id,
-        researcher_id=researcher_id,
+        research_organizations_id=research_organizations_id,
         dataset_id=dataset_id,
     )
 
@@ -122,7 +123,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     data_submitter_id: Union[Unset, None, str] = UNSET,
-    researcher_id: Union[Unset, None, str] = UNSET,
+    research_organizations_id: Union[Unset, None, str] = UNSET,
     dataset_id: Union[Unset, None, str] = UNSET,
 ) -> Optional[Union[GetMultipleDataFederationOut, HTTPExceptionObj, ValidationError]]:
     """Get All Data Federations
@@ -131,7 +132,8 @@ def sync(
 
     Args:
         data_submitter_id (Union[Unset, None, str]): UUID of Data Submitter in the data federation
-        researcher_id (Union[Unset, None, str]): UUID of Researcher in the data federation
+        research_organizations_id (Union[Unset, None, str]): UUID of Researcher in the data
+            federation
         dataset_id (Union[Unset, None, str]): UUID of Dataset in the data federation
 
     Raises:
@@ -145,7 +147,7 @@ def sync(
     return sync_detailed(
         client=client,
         data_submitter_id=data_submitter_id,
-        researcher_id=researcher_id,
+        research_organizations_id=research_organizations_id,
         dataset_id=dataset_id,
     ).parsed
 
@@ -154,7 +156,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     data_submitter_id: Union[Unset, None, str] = UNSET,
-    researcher_id: Union[Unset, None, str] = UNSET,
+    research_organizations_id: Union[Unset, None, str] = UNSET,
     dataset_id: Union[Unset, None, str] = UNSET,
 ) -> Response[Union[GetMultipleDataFederationOut, HTTPExceptionObj, ValidationError]]:
     """Get All Data Federations
@@ -163,7 +165,8 @@ async def asyncio_detailed(
 
     Args:
         data_submitter_id (Union[Unset, None, str]): UUID of Data Submitter in the data federation
-        researcher_id (Union[Unset, None, str]): UUID of Researcher in the data federation
+        research_organizations_id (Union[Unset, None, str]): UUID of Researcher in the data
+            federation
         dataset_id (Union[Unset, None, str]): UUID of Dataset in the data federation
 
     Raises:
@@ -177,7 +180,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         client=client,
         data_submitter_id=data_submitter_id,
-        researcher_id=researcher_id,
+        research_organizations_id=research_organizations_id,
         dataset_id=dataset_id,
     )
 
@@ -191,7 +194,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     data_submitter_id: Union[Unset, None, str] = UNSET,
-    researcher_id: Union[Unset, None, str] = UNSET,
+    research_organizations_id: Union[Unset, None, str] = UNSET,
     dataset_id: Union[Unset, None, str] = UNSET,
 ) -> Optional[Union[GetMultipleDataFederationOut, HTTPExceptionObj, ValidationError]]:
     """Get All Data Federations
@@ -200,7 +203,8 @@ async def asyncio(
 
     Args:
         data_submitter_id (Union[Unset, None, str]): UUID of Data Submitter in the data federation
-        researcher_id (Union[Unset, None, str]): UUID of Researcher in the data federation
+        research_organizations_id (Union[Unset, None, str]): UUID of Researcher in the data
+            federation
         dataset_id (Union[Unset, None, str]): UUID of Dataset in the data federation
 
     Raises:
@@ -215,7 +219,7 @@ async def asyncio(
         await asyncio_detailed(
             client=client,
             data_submitter_id=data_submitter_id,
-            researcher_id=researcher_id,
+            research_organizations_id=research_organizations_id,
             dataset_id=dataset_id,
         )
     ).parsed

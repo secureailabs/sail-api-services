@@ -149,7 +149,7 @@ async def server_error_exception_handler(request: Request, exc: Exception):
     await data_service.insert_one("errors", jsonable_encoder(message))
 
     # Add the exception to the audit log as well
-    await log_message(json.dumps(message))
+    # await log_message(json.dumps(message))
 
     # Respond with a 500 error
     return Response(

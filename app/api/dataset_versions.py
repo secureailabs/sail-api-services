@@ -272,6 +272,9 @@ async def update_dataset_version(
     if updated_dataset_version_info.state:
         dataset_version_db.state = updated_dataset_version_info.state
 
+    if updated_dataset_version_info.note:
+        dataset_version_db.note += "/n" + updated_dataset_version_info.note
+
     await data_service.update_one(
         DB_COLLECTION_DATASET_VERSIONS,
         {"_id": str(dataset_version_id)},

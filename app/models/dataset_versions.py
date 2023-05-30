@@ -56,6 +56,7 @@ class UpdateDatasetVersion_In(SailBaseModel):
     # TODO: add a validator to enure that atleast of the field is present in the request
     description: Optional[StrictStr] = Field(default=None)
     state: Optional[DatasetVersionState] = Field(default=None)
+    note: Optional[StrictStr] = Field(default=None)
 
 
 class GetDatasetVersion_Out(DatasetVersion_Base):

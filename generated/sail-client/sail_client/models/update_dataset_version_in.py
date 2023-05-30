@@ -14,10 +14,12 @@ class UpdateDatasetVersionIn:
     Attributes:
         description (Union[Unset, str]):
         state (Union[Unset, DatasetVersionState]): An enumeration.
+        note (Union[Unset, str]):
     """
 
     description: Union[Unset, str] = UNSET
     state: Union[Unset, DatasetVersionState] = UNSET
+    note: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -26,6 +28,8 @@ class UpdateDatasetVersionIn:
         if not isinstance(self.state, Unset):
             state = self.state.value
 
+        note = self.note
+
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -33,6 +37,8 @@ class UpdateDatasetVersionIn:
             field_dict["description"] = description
         if state is not UNSET:
             field_dict["state"] = state
+        if note is not UNSET:
+            field_dict["note"] = note
 
         return field_dict
 
@@ -48,9 +54,12 @@ class UpdateDatasetVersionIn:
         else:
             state = DatasetVersionState(_state)
 
+        note = d.pop("note", UNSET)
+
         update_dataset_version_in = cls(
             description=description,
             state=state,
+            note=note,
         )
 
         update_dataset_version_in.additional_properties = d

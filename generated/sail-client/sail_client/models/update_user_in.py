@@ -13,20 +13,24 @@ class UpdateUserIn:
     """
     Attributes:
         job_title (str):
-        role (UserRole): An enumeration.
+        roles (List[UserRole]):
         account_state (UserAccountState): An enumeration.
         avatar (str):
     """
 
     job_title: str
-    role: UserRole
+    roles: List[UserRole]
     account_state: UserAccountState
     avatar: str
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         job_title = self.job_title
-        role = self.role.value
+        roles = []
+        for roles_item_data in self.roles:
+            roles_item = roles_item_data.value
+
+            roles.append(roles_item)
 
         account_state = self.account_state.value
 
@@ -37,7 +41,7 @@ class UpdateUserIn:
         field_dict.update(
             {
                 "job_title": job_title,
-                "role": role,
+                "roles": roles,
                 "account_state": account_state,
                 "avatar": avatar,
             }
@@ -50,7 +54,12 @@ class UpdateUserIn:
         d = src_dict.copy()
         job_title = d.pop("job_title")
 
-        role = UserRole(d.pop("role"))
+        roles = []
+        _roles = d.pop("roles")
+        for roles_item_data in _roles:
+            roles_item = UserRole(roles_item_data)
+
+            roles.append(roles_item)
 
         account_state = UserAccountState(d.pop("account_state"))
 
@@ -58,7 +67,7 @@ class UpdateUserIn:
 
         update_user_in = cls(
             job_title=job_title,
-            role=role,
+            roles=roles,
             account_state=account_state,
             avatar=avatar,
         )

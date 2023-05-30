@@ -70,7 +70,10 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: TokenData = Depends(get_current_user)):
-        if user.role not in self.allowed_roles:
+        if user.roles:
+            for role in user.roles:
+                if role in self.allowed_roles:
+                    return None
             raise HTTPException(status_code=403, detail="Operation not permitted")
 
 

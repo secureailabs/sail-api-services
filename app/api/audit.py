@@ -138,14 +138,14 @@ async def query_computation(
 
     # the user is research org admin, can only get info about data and nodes owned by the org.
     # check if data belongs to org
-    elif current_user == UserRole.ORGANIZATION_ADMIN:
+    elif current_user == UserRole.ADMIN:
         organization_id = current_user.organization_id
         query["query"] = f"{query['query']} |= `{str(organization_id)}`"
         response = await audit_query(query)
 
     # the user is the data owner admin, can only get info about the data they own.
     # check if data belongs to owner
-    elif current_user == UserRole.DATASET_ADMIN:
+    elif current_user == UserRole.DATA_SUBMITTER:
         user_id = current_user.id
         query["query"] = f"{query['query']} |= `{str(user_id)}`"
         response = await audit_query(query)
@@ -179,7 +179,7 @@ async def query_computation_by_user_id(
         response = await audit_query(query)
 
     # the user is research org admin, can only get info related to the VMs belongs to the org.
-    elif current_user == UserRole.ORGANIZATION_ADMIN:
+    elif current_user == UserRole.ADMIN:
         provision_db = await get_all_secure_computation_nodes(current_user)
         provision_db = provision_db.secure_computation_nodes
 
@@ -197,7 +197,7 @@ async def query_computation_by_user_id(
         response = await audit_query(query)
 
     # the user is the data owner admin, can only get info about the data they own.
-    elif current_user == UserRole.DATASET_ADMIN:
+    elif current_user == UserRole.DATA_SUBMITTER:
         datasets = await get_all_datasets(current_user)
         datasets = datasets.datasets
 
@@ -245,7 +245,7 @@ async def query_computation_by_data_id(
 
     # the user is research org admin, can only get info about data and nodes owned by the org.
     # check if data belongs to org
-    elif current_user == UserRole.ORGANIZATION_ADMIN:
+    elif current_user == UserRole.ADMIN:
         data_ids = await get_dataset_from_user_node(current_user)
         if dataset_id in data_ids:
             response = await audit_query(query)
@@ -254,7 +254,7 @@ async def query_computation_by_data_id(
 
     # the user is the data owner admin, can only get info about the data they own.
     # check if data belongs to owner
-    elif current_user == UserRole.DATASET_ADMIN:
+    elif current_user == UserRole.DATA_SUBMITTER:
         ###
         data_id = await get_all_datasets(current_user)
         data_id = data_id.datasets

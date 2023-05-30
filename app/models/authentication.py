@@ -11,6 +11,9 @@
 #     be disclosed to others for any purpose without
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
+
+from typing import List
+
 from pydantic import Field, StrictStr
 
 from app.models.accounts import UserRole
@@ -26,14 +29,14 @@ class LoginSuccess_Out(SailBaseModel):
 class TokenData(SailBaseModel):
     id: PyObjectId = Field(alias="_id")
     organization_id: PyObjectId = Field(...)
-    role: UserRole = Field(...)
+    roles: List[UserRole] = Field(...)
     exp: int = Field(...)
 
 
 class RefreshTokenData(SailBaseModel):
     id: PyObjectId = Field(alias="_id")
     organization_id: PyObjectId = Field(...)
-    role: UserRole = Field(...)
+    roles: List[UserRole] = Field(...)
     exp: int = Field(...)
 
 

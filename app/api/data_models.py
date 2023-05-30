@@ -82,8 +82,8 @@ class DataModel:
         if organization_id:
             query["organization_id"] = organization_id
 
-        if not query:
-            raise Exception("Invalid query")
+        # if not query:
+        #     raise Exception("Invalid query")
 
         response = await data_service.find_by_query(
             collection=DataModel.DB_COLLECTION_DATA_MODEL,
@@ -239,7 +239,7 @@ async def get_all_data_model_info(
     :rtype: GetDataModel
     """
     # Get the data model
-    data_model_info = await DataModel.read(organization_id=current_user.organization_id)
+    data_model_info = await DataModel.read()
 
     response_list: List[GetDataModel_Out] = []
     for model in data_model_info:

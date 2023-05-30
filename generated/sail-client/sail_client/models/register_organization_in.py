@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Type, TypeVar, Union
 
 import attr
 
+from ..models.user_role import UserRole
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="RegisterOrganizationIn")
@@ -17,6 +18,7 @@ class RegisterOrganizationIn:
         admin_job_title (str):
         admin_email (str):
         admin_password (str):
+        admin_roles (List[UserRole]):
         avatar (Union[Unset, str]):
         admin_avatar (Union[Unset, str]):
     """
@@ -27,6 +29,7 @@ class RegisterOrganizationIn:
     admin_job_title: str
     admin_email: str
     admin_password: str
+    admin_roles: List[UserRole]
     avatar: Union[Unset, str] = UNSET
     admin_avatar: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
@@ -38,6 +41,12 @@ class RegisterOrganizationIn:
         admin_job_title = self.admin_job_title
         admin_email = self.admin_email
         admin_password = self.admin_password
+        admin_roles = []
+        for admin_roles_item_data in self.admin_roles:
+            admin_roles_item = admin_roles_item_data.value
+
+            admin_roles.append(admin_roles_item)
+
         avatar = self.avatar
         admin_avatar = self.admin_avatar
 
@@ -51,6 +60,7 @@ class RegisterOrganizationIn:
                 "admin_job_title": admin_job_title,
                 "admin_email": admin_email,
                 "admin_password": admin_password,
+                "admin_roles": admin_roles,
             }
         )
         if avatar is not UNSET:
@@ -75,6 +85,13 @@ class RegisterOrganizationIn:
 
         admin_password = d.pop("admin_password")
 
+        admin_roles = []
+        _admin_roles = d.pop("admin_roles")
+        for admin_roles_item_data in _admin_roles:
+            admin_roles_item = UserRole(admin_roles_item_data)
+
+            admin_roles.append(admin_roles_item)
+
         avatar = d.pop("avatar", UNSET)
 
         admin_avatar = d.pop("admin_avatar", UNSET)
@@ -86,6 +103,7 @@ class RegisterOrganizationIn:
             admin_job_title=admin_job_title,
             admin_email=admin_email,
             admin_password=admin_password,
+            admin_roles=admin_roles,
             avatar=avatar,
             admin_avatar=admin_avatar,
         )

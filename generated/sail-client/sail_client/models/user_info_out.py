@@ -19,7 +19,7 @@ class UserInfoOut:
         name (str):
         email (str):
         job_title (str):
-        role (UserRole): An enumeration.
+        roles (List[UserRole]):
         id (str):
         organization (BasicObjectInfo):
         avatar (Union[Unset, str]):
@@ -28,7 +28,7 @@ class UserInfoOut:
     name: str
     email: str
     job_title: str
-    role: UserRole
+    roles: List[UserRole]
     id: str
     organization: "BasicObjectInfo"
     avatar: Union[Unset, str] = UNSET
@@ -38,7 +38,11 @@ class UserInfoOut:
         name = self.name
         email = self.email
         job_title = self.job_title
-        role = self.role.value
+        roles = []
+        for roles_item_data in self.roles:
+            roles_item = roles_item_data.value
+
+            roles.append(roles_item)
 
         id = self.id
         organization = self.organization.to_dict()
@@ -52,7 +56,7 @@ class UserInfoOut:
                 "name": name,
                 "email": email,
                 "job_title": job_title,
-                "role": role,
+                "roles": roles,
                 "id": id,
                 "organization": organization,
             }
@@ -73,7 +77,12 @@ class UserInfoOut:
 
         job_title = d.pop("job_title")
 
-        role = UserRole(d.pop("role"))
+        roles = []
+        _roles = d.pop("roles")
+        for roles_item_data in _roles:
+            roles_item = UserRole(roles_item_data)
+
+            roles.append(roles_item)
 
         id = d.pop("id")
 
@@ -85,7 +94,7 @@ class UserInfoOut:
             name=name,
             email=email,
             job_title=job_title,
-            role=role,
+            roles=roles,
             id=id,
             organization=organization,
             avatar=avatar,

@@ -25,6 +25,15 @@ class OrganizationState(Enum):
     INACTIVE = "INACTIVE"
 
 
+class UserRole(Enum):
+    ADMIN = "ADMIN"
+    USER = "USER"
+    DATA_SUBMITTER = "DATA_SUBMITTER"
+    RESEARCHER = "RESEARCHER"
+    FEDERATION_OWNER = "FEDERATION_OWNER"
+    SAIL_ADMIN = "SAIL_ADMIN"
+
+
 class Organization_Base(SailBaseModel):
     name: StrictStr = Field(...)
     description: StrictStr = Field(...)
@@ -43,6 +52,7 @@ class RegisterOrganization_In(Organization_Base):
     admin_email: EmailStr = Field(...)
     admin_password: StrictStr = Field(...)
     admin_avatar: Optional[StrictStr] = Field(default=None)
+    admin_roles: List[UserRole] = Field(...)
 
 
 class RegisterOrganization_Out(SailBaseModel):
@@ -64,16 +74,6 @@ class UpdateOrganization_In(SailBaseModel):
     avatar: Optional[StrictStr] = Field(...)
 
 
-class UserRole(Enum):
-    ADMIN = "ADMIN"
-    AUDITOR = "AUDITOR"
-    USER = "USER"
-    DIGITAL_CONTRACT_ADMIN = "DIGITAL_CONTRACT_ADMIN"
-    DATASET_ADMIN = "DATASET_ADMIN"
-    SAIL_ADMIN = "SAIL_ADMIN"
-    ORGANIZATION_ADMIN = "ORGANIZATION_ADMIN"
-
-
 class UserAccountState(Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
@@ -84,7 +84,7 @@ class User_Base(SailBaseModel):
     name: StrictStr = Field(...)
     email: EmailStr = Field(...)
     job_title: StrictStr = Field(...)
-    role: UserRole = Field(...)
+    roles: List[UserRole] = Field(...)
     avatar: Optional[StrictStr] = Field(default=None)
 
 
@@ -117,7 +117,7 @@ class GetUsers_Out(User_Base):
     name: StrictStr = Field(...)
     email: EmailStr = Field(...)
     job_title: StrictStr = Field(...)
-    role: UserRole = Field(...)
+    roles: List[UserRole] = Field(...)
     avatar: Optional[StrictStr] = Field(...)
 
 
@@ -127,6 +127,6 @@ class GetMultipleUsers_Out(SailBaseModel):
 
 class UpdateUser_In(SailBaseModel):
     job_title: Optional[StrictStr] = Field(...)
-    role: Optional[UserRole] = Field(...)
+    roles: Optional[List[UserRole]] = Field(...)
     account_state: Optional[UserAccountState] = Field(...)
     avatar: Optional[StrictStr] = Field(...)

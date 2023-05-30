@@ -72,7 +72,7 @@ async def register_organization(
         name=organization.admin_name,
         email=organization.admin_email,
         job_title=organization.admin_job_title,
-        role=UserRole.ADMIN,
+        roles=organization.admin_roles,
         hashed_password=get_password_hash(organization.admin_email, organization.admin_password),
         account_state=UserAccountState.ACTIVE,
         organization_id=organization_db.id,
@@ -405,9 +405,9 @@ async def update_user_info(
 
     user_db = User_Db(**user)
     # Only admin can update the role and account state
-    if update_user_info.role or update_user_info.account_state:
-        if current_user.role == UserRole.ADMIN:
-            user_db.role = update_user_info.role if update_user_info.role else user_db.role
+    if update_user_info.roles or update_user_info.account_state:
+        if UserRole.ADMIN in current_user.roles:
+            user_db.roles = update_user_info.roles if update_user_info.roles else user_db.roles
             user_db.account_state = (
                 update_user_info.account_state if update_user_info.account_state else user_db.account_state
             )
@@ -451,7 +451,7 @@ async def soft_delete_user(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
 
     # Only admin or user can delete the user
-    if current_user.role == UserRole.ADMIN or current_user.id == user_id:
+    if UserRole.ADMIN in current_user.roles or current_user.id == user_id:
         # Check if the user exists
         user = await data_service.find_one(
             DB_COLLECTION_USERS, {"_id": str(user_id), "organization_id": str(organization_id)}

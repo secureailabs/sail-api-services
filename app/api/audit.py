@@ -133,19 +133,19 @@ async def query_computation(
 
     response = {}
     # the user is SAIL tech support, no restriction
-    if current_user.role == UserRole.ADMIN:
+    if UserRole.ADMIN in current_user.roles:
         response = await audit_query(query)
 
     # the user is research org admin, can only get info about data and nodes owned by the org.
     # check if data belongs to org
-    elif current_user == UserRole.ADMIN:
+    elif UserRole.ADMIN in current_user.roles:
         organization_id = current_user.organization_id
         query["query"] = f"{query['query']} |= `{str(organization_id)}`"
         response = await audit_query(query)
 
     # the user is the data owner admin, can only get info about the data they own.
     # check if data belongs to owner
-    elif current_user == UserRole.DATA_SUBMITTER:
+    elif UserRole.DATA_SUBMITTER in current_user.roles:
         user_id = current_user.id
         query["query"] = f"{query['query']} |= `{str(user_id)}`"
         response = await audit_query(query)
@@ -175,7 +175,7 @@ async def query_computation_by_user_id(
 
     response = {}
     # the user is SAIL tech support, no restriction
-    if current_user.role == UserRole.ADMIN:
+    if UserRole.ADMIN in current_user.roles:
         response = await audit_query(query)
 
     # the user is research org admin, can only get info related to the VMs belongs to the org.
@@ -240,12 +240,12 @@ async def query_computation_by_data_id(
 
     response = {}
     # the user is SAIL tech support, no restriction
-    if current_user.role == UserRole.ADMIN:
+    if UserRole.ADMIN in current_user.roles:
         response = await audit_query(query)
 
     # the user is research org admin, can only get info about data and nodes owned by the org.
     # check if data belongs to org
-    elif current_user == UserRole.ADMIN:
+    elif UserRole.ADMIN in current_user.roles:
         data_ids = await get_dataset_from_user_node(current_user)
         if dataset_id in data_ids:
             response = await audit_query(query)
@@ -254,7 +254,7 @@ async def query_computation_by_data_id(
 
     # the user is the data owner admin, can only get info about the data they own.
     # check if data belongs to owner
-    elif current_user == UserRole.DATA_SUBMITTER:
+    elif UserRole.DATA_SUBMITTER in current_user.roles:
         ###
         data_id = await get_all_datasets(current_user)
         data_id = data_id.datasets
@@ -310,7 +310,7 @@ async def query_user_activity(
     """
 
     # the user is SAIL tech support, no restriction
-    if current_user.role == UserRole.ADMIN:
+    if UserRole.ADMIN in current_user.roles:
         response = await audit_query(query)
     # for other user identity, this is forbidden
     else:

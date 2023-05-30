@@ -135,7 +135,7 @@ async def get_all_data_federations(
         query = {"research_organizations_id": {"$all": [str(current_user.organization_id)]}}
     elif dataset_id:
         query = {"dataset_id": {"$all": [str(dataset_id)]}}
-    elif current_user.role is UserRole.SAIL_ADMIN:
+    elif UserRole.SAIL_ADMIN in current_user.roles:
         query = {}
     elif (not data_submitter_id) and (not research_organizations_id) and (not dataset_id):
         query = {

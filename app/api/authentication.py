@@ -23,7 +23,6 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.data import operations as data_service
-from app.log import log_message
 from app.models.accounts import Organization_db, User_Db, UserAccountState, UserInfo_Out, UserRole
 from app.models.authentication import LoginSuccess_Out, RefreshToken_In, TokenData
 from app.models.common import BasicObjectInfo, PyObjectId
@@ -64,7 +63,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return token_data
 
 
-########################################################################################################################
 class RoleChecker:
     def __init__(self, allowed_roles: List[UserRole]):
         self.allowed_roles = allowed_roles
@@ -77,7 +75,6 @@ class RoleChecker:
             raise HTTPException(status_code=403, detail="Operation not permitted")
 
 
-########################################################################################################################
 @router.post(
     path="/login",
     description="User login with email and password",
@@ -162,13 +159,9 @@ async def login_for_access_token(
         algorithm=ALGORITHM,
     )
 
-    message = f"[Login For Access Token]: user_email:{form_data.username}"
-    await log_message(message)
-
     return LoginSuccess_Out(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
-########################################################################################################################
 @router.post(
     path="/refresh-token",
     description="Refresh the JWT token for the user",
@@ -210,16 +203,12 @@ async def refresh_for_access_token(
             algorithm=ALGORITHM,
         )
 
-        message = f"[Refresh For Access Token]: user_id: {user_id}"
-        await log_message(message)
-
     except JWTError as exception:
         raise credentials_exception
 
     return LoginSuccess_Out(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
-########################################################################################################################
 @router.get(
     path="/me",
     description="Get the current user information",
@@ -244,9 +233,6 @@ async def get_current_user_info(
     if not found_organization:
         raise HTTPException(status_code=404, detail="Organization not found")
     found_organization_db = Organization_db(**found_organization)
-
-    message = f"[Get Current User Info]: user_id:{current_user.id}"
-    await log_message(message)
 
     return UserInfo_Out(**found_user_db.dict(), organization=BasicObjectInfo(**found_organization_db.dict()))
 
@@ -281,8 +267,5 @@ async def unlock_user_account(
         {"_id": str(found_user_db.id)},
         {"$set": {"account_state": UserAccountState.ACTIVE.value, "failed_login_attempts": 0}},
     )
-
-    message = f"[Unlock User Account]: user_id:{current_user.id}"
-    await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

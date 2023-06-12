@@ -26,7 +26,6 @@ from app.api.datasets import get_dataset, get_datset_encryption_key
 from app.api.emails import send_email
 from app.api.internal_utils import cache_get_basic_info_datasets, cache_get_basic_info_organization
 from app.data import operations as data_service
-from app.log import log_message
 from app.models.accounts import GetUsers_Out, UserRole
 from app.models.authentication import TokenData
 from app.models.common import BasicObjectInfo, KeyVaultObject, PyObjectId
@@ -82,7 +81,6 @@ def getEmailInviteContent(data_federation: str, inviter_organization: str) -> st
     return htmlText
 
 
-########################################################################################################################
 @router.post(
     path="/data-federations",
     description="Register new data federation",
@@ -102,13 +100,9 @@ async def register_data_federation(
     )
     await data_service.insert_one(DB_COLLECTION_DATA_FEDERATIONS, jsonable_encoder(data_federation_db))
 
-    message = f"[Register Data Federation]: user_id:{current_user.id}"
-    await log_message(message)
-
     return data_federation_db
 
 
-########################################################################################################################
 @router.get(
     path="/data-federations",
     description="Get list of all the data federations",
@@ -191,13 +185,9 @@ async def get_all_data_federations(
         )
         response_list_of_data_federations.append(response_data_federation)
 
-    message = f"[Get All Data Federations]: user_id: {current_user.id}"
-    await log_message(message)
-
     return GetMultipleDataFederation_Out(data_federations=response_list_of_data_federations)
 
 
-########################################################################################################################
 @router.get(
     path="/data-federations/{data_federation_id}",
     description="Get the information about a data federation",
@@ -239,13 +229,9 @@ async def get_data_federation(
         datasets=dataset_basic_info_list,
     )
 
-    message = f"[Get Data Federation]: user_id: {current_user.id}, data_federatuon_id: {data_federation_id}"
-    await log_message(message)
-
     return response_data_federation
 
 
-########################################################################################################################
 @router.put(
     path="/data-federations/{data_federation_id}",
     description="Update data federation information",
@@ -278,13 +264,9 @@ async def update_data_federation(
         {"$set": jsonable_encoder(data_federation_db)},
     )
 
-    message = f"[Update Data Federation]: user_id:{current_user.id}"
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.put(
     path="/data-federations/{data_federation_id}/researcher/{researcher_organization_id}",
     description="Invite a researcher to join a data federation",
@@ -362,13 +344,9 @@ async def invite_researcher(
         {"$set": jsonable_encoder(data_federation_db)},
     )
 
-    message = f"[Invite Researcher]: user_id:{current_user.id}, data_federation_id: {data_federation_id}, organization_id: {researcher_organization_id}"
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.post(
     path="/data-federations/{data_federation_id}/data-submitter/{data_submitter_organization_id}",
     description="Automatically add a data submitter to the data federation, bypassing an invite path",
@@ -435,13 +413,9 @@ async def register_data_submitter(
         {"$set": jsonable_encoder(data_federation_db)},
     )
 
-    message = f"[Register Data Submitter]: user_id:{current_user.id}, data_federation_id: {data_federation_id}, data_submitter_id: {data_submitter_organization_id}"
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.post(
     path="/data-federations/{data_federation_id}/researcher/{researcher_organization_id}",
     description="Automatically add a researcher to the data federation, bypassing an invite path",
@@ -495,11 +469,9 @@ async def register_researcher(
         {"$set": jsonable_encoder(data_federation_db)},
     )
 
-    message = f"[Register Researcher]: user_id:{current_user.id}, data_federation_id: {data_federation_id}, researcher_id: {researcher_organization_id}"
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.put(
     path="/data-federations/{data_federation_id}/data-submitter/{data_submitter_organization_id}",
     description="Invite a data submitter to join a data federation",
@@ -581,13 +553,9 @@ async def invite_data_submitter(
         {"$set": jsonable_encoder(data_federation_db)},
     )
 
-    message = f"[Invite Data Submitter]: user_id:{current_user.id}, data_federation_id: {data_federation_id}, organization_id: {data_submitter_organization_id}"
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.patch(
     path="/data-federations/{data_federation_id}",
     description="Add a data model to a data federation",
@@ -637,7 +605,6 @@ async def add_data_model(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.delete(
     path="/data-federations/{data_federation_id}",
     description="Disable the data federation",
@@ -666,13 +633,9 @@ async def soft_delete_data_federation(
         {"$set": jsonable_encoder(data_federation_db)},
     )
 
-    message = f"[Soft Delete Data Federation]: user_id:{current_user.id}"
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 async def register_invite(invite_req: RegisterInvite_In):
     """
     Registe and invite to database
@@ -691,13 +654,9 @@ async def register_invite(invite_req: RegisterInvite_In):
     )
     await data_service.insert_one(DB_COLLECTION_INVITES, jsonable_encoder(invite_db))
 
-    message = f"[Register Invite]"
-    await log_message(message)
-
     return RegisterInvite_Out(**invite_db.dict())
 
 
-########################################################################################################################
 @router.get(
     path="/data-federations/{organization_id}/invites",
     description="Get list of all the pending invites received. Only ADMIN roles have access.",
@@ -748,13 +707,9 @@ async def get_all_invites(
             )
         )
 
-    message = f"[Get All Invites]: user_id:{current_user.id}, organization_id: {organization_id}"
-    await log_message(message)
-
     return GetMultipleInvite_Out(invites=invites_out)
 
 
-########################################################################################################################
 @router.get(
     path="/data-federations/{organization_id}/invites/{invite_id}",
     description="Get the information about an invite",
@@ -802,13 +757,9 @@ async def get_invite(
         inviter_organization=inviter_user.organization,
     )
 
-    message = f"[Get Invite]: user_id:{current_user.id}, data_federation_id: {invite.data_federation_id}, invite_id: {invite_id}, organization_id: {organization_id}"
-    await log_message(message)
-
     return invite_out
 
 
-########################################################################################################################
 @router.patch(
     path="/data-federations/{organization_id}/invites/{invite_id}",
     description="Accept or reject an invite",
@@ -900,13 +851,9 @@ async def accept_or_reject_invite(
             {"$set": jsonable_encoder(data_federation)},
         )
 
-    message = f"[Accept Or Reject Invite]: user_id:{current_user.id}, data_federation_id: {invite.data_federation_id}, invite_id: {invite_id}"
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 async def send_invite_email(subject: str, email_body: str, emails: List[EmailStr]):
     """
     Background task to send emails using the email plugin
@@ -922,7 +869,6 @@ async def send_invite_email(subject: str, email_body: str, emails: List[EmailStr
     send_email(email_req)
 
 
-########################################################################################################################
 @router.put(
     path="/data-federations/{data_federation_id}/datasets/{dataset_id}",
     description="Add a dataset to a data federation",
@@ -979,15 +925,9 @@ async def add_dataset(
         {"$set": jsonable_encoder(data_federation_db)},
     )
 
-    message = (
-        f"[Add Dataset]: user_id:{current_user.id}, data_federation_id: {data_federation_id}, dataset_id: {dataset_id}"
-    )
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.delete(
     path="/data-federations/{data_federation_id}/datasets/{dataset_id}",
     description="Remove a dataset from a data federation",
@@ -1038,9 +978,6 @@ async def remove_dataset(
         {"_id": str(data_federation_id)},
         {"$set": jsonable_encoder(data_federation_db)},
     )
-
-    message = f"[Remove Dataset]: user_id:{current_user.id}, data_federation_id: {data_federation_id}, dataset_id: {dataset_id}"
-    await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -1148,11 +1085,6 @@ async def get_existing_dataset_key(
     :raises HTTPException: HTTP_401_UNAUTHORIZED, "Unauthorised"
     :raises exception: should be 500, internal server error
     """
-    message = (
-        f"[Dataset Key]: user_id:{current_user.id}, data_federation_id: {data_federation_id}, dataset_id: {dataset_id}"
-    )
-    await log_message(message)
-
     return await get_dataset_key(
         data_federation_id=data_federation_id,
         dataset_id=dataset_id,

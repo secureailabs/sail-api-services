@@ -12,27 +12,25 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
-import asyncio
-import functools
 from typing import Optional, Union
 
-import requests
+import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import StrictStr
 
 from app.api.authentication import get_current_user
-from app.api.datasets import get_all_datasets
-from app.api.secure_computation_nodes import get_all_secure_computation_nodes
 from app.models.accounts import UserRole
 from app.models.audit import QueryResult
 from app.models.authentication import TokenData
-from app.models.common import PyObjectId
 from app.utils.secrets import get_secret
 
 router = APIRouter()
 
 audit_server_ip = get_secret("audit_service_ip")
+
 audit_server_endpoint = f"http://{audit_server_ip}:3100/loki/api/v1/query_range"
+# audit_server_endpoint = f"http://172.20.100.4:3100/loki/api/v1/query_range"
+loki_query_pattern = "| pattern \"<time> - <level> - [<message_type>] {'user_id': '<user_id>', 'request': '<method> <url>', 'response': 'response_code'}\""
 
 
 ########################################################################################################################
@@ -93,253 +91,15 @@ async def audit_incidents_query(
     query_str = f'{{job="{label}"}}'
     query["query"] = query_str
 
+    # Create a query string for Loki
     if "user_id" in query:
         user_id = query.pop("user_id")
-        query_str = f"{query_str} |= `{str(user_id)}`"
+        query_str = f'{query_str}{loki_query_pattern} | user_id = "{user_id}"'
         query["query"] = query_str
-        if label == "computation":
-            response = await query_computation_by_user_id(query, current_user)
 
-    elif "data_id" in query:
-        data_id = query.pop("data_id")
-        query_str = f"{query_str} |= `{str(data_id)}`"
-        query["query"] = query_str
-        if label == "computation":
-            response = await query_computation_by_data_id(data_id, query, current_user)
-
-    if label == "user_activity":
-        response = await query_user_activity(query, current_user)
-    elif label == "computation":
-        response = await query_computation(query, current_user)
-
-    return QueryResult(**response.json())
-
-
-########################################################################################################################
-async def query_computation(
-    query: dict,
-    current_user: TokenData,
-):
-    """
-    query computation activities
-
-    :param query: loki query json
-    :type query: dict
-    :param current_user: the user who perform the query
-    :type current_user: TokenData
-    :return: query result
-    :rtype: json(dict)
-    """
-
-    response = {}
-    # the user is SAIL tech support, no restriction
-    if UserRole.ADMIN in current_user.roles:
-        response = await audit_query(query)
-
-    # the user is research org admin, can only get info about data and nodes owned by the org.
-    # check if data belongs to org
-    elif UserRole.ADMIN in current_user.roles:
-        organization_id = current_user.organization_id
-        query["query"] = f"{query['query']} |= `{str(organization_id)}`"
-        response = await audit_query(query)
-
-    # the user is the data owner admin, can only get info about the data they own.
-    # check if data belongs to owner
-    elif UserRole.DATA_SUBMITTER in current_user.roles:
-        user_id = current_user.id
-        query["query"] = f"{query['query']} |= `{str(user_id)}`"
-        response = await audit_query(query)
-
-    # for other user identity, this is forbidden
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
-
-    return response
-
-
-# #######################################################################################################################
-async def query_computation_by_user_id(
-    query: dict,
-    current_user: TokenData,
-):
-    """
-    perform a query on scn computation activities
-
-    :param query: query body
-    :type query: dict
-    :param current_user: the user who perform the query
-    :type current_user: TokenData
-    :return: response
-    :rtype: dict(json)
-    """
-
-    response = {}
-    # the user is SAIL tech support, no restriction
-    if UserRole.ADMIN in current_user.roles:
-        response = await audit_query(query)
-
-    # the user is research org admin, can only get info related to the VMs belongs to the org.
-    elif current_user == UserRole.ADMIN:
-        provision_db = await get_all_secure_computation_nodes(current_user)
-        provision_db = provision_db.secure_computation_nodes
-
-        provision_VMs = []
-        for provision in provision_db:
-            provision_VMs.extend(provision.id)
-
-        if len(provision_VMs) != 0:
-            scn_ids = ""
-            for scn_id in provision_VMs:
-                scn_ids += scn_id
-                scn_ids += "|"
-            scn_ids = scn_ids[:-1]
-            query["query"] = f'{query["query"]} |= `{str(scn_ids)}`'
-        response = await audit_query(query)
-
-    # the user is the data owner admin, can only get info about the data they own.
-    elif current_user == UserRole.DATA_SUBMITTER:
-        datasets = await get_all_datasets(current_user)
-        datasets = datasets.datasets
-
-        if len(datasets) != 0:
-            dataset_ids = ""
-            for data in datasets:
-                dataset_ids += data.id
-                dataset_ids += "|"
-            dataset_ids = dataset_ids[:-1]
-            query["query"] = f'{query["query"]} |= `{str(dataset_ids)}`'
-        response = await audit_query(query)
-
-    # for other user identity, this is forbidden
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
-
-    return response
-
-
-########################################################################################################################
-
-
-async def query_computation_by_data_id(
-    dataset_id: PyObjectId,
-    query: dict,
-    current_user: TokenData,
-):
-    """
-    query scn computation activities by dataID
-
-    :param dataset_id: dataset id
-    :type dataset_id: PyObjectId
-    :param query: query body
-    :type query: dict
-    :param current_user: the user who perform the operation, defaults to Depends(get_current_user)
-    :type current_user: TokenData, optional
-    :return: response
-    :rtype: json(dict)
-    """
-
-    response = {}
-    # the user is SAIL tech support, no restriction
-    if UserRole.ADMIN in current_user.roles:
-        response = await audit_query(query)
-
-    # the user is research org admin, can only get info about data and nodes owned by the org.
-    # check if data belongs to org
-    elif UserRole.ADMIN in current_user.roles:
-        data_ids = await get_dataset_from_user_node(current_user)
-        if dataset_id in data_ids:
-            response = await audit_query(query)
-        else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
-
-    # the user is the data owner admin, can only get info about the data they own.
-    # check if data belongs to owner
-    elif UserRole.DATA_SUBMITTER in current_user.roles:
-        ###
-        data_id = await get_all_datasets(current_user)
-        data_id = data_id.datasets
-        if len(data_id) == 0:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
-        else:
-            response = await audit_query(query)
-
-    # for other user identity, this is forbidden
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
-
-    return response
-
-
-########################################################################################################################
-async def get_dataset_from_user_node(
-    current_user: TokenData,
-):
-    """
-    get dataset associated with an particular node
-
-    :param current_user: the user who perform the query
-    :type current_user: TokenData
-    :return: data ids on the node
-    :rtype: set
-    """
-    event_loop = asyncio.get_event_loop()
-    nodes_info = await event_loop.run_in_executor(None, requests.get, current_user)
-
-    data_busket = set()
-    for node in nodes_info:
-        for data in node["datasets"]:
-            data_busket.update(data.id)
-
-    return data_busket
-
-
-########################################################################################################################
-async def query_user_activity(
-    query: dict,
-    current_user: TokenData,
-):
-    """
-    query for activities realted to api services
-
-    :param query: query body
-    :type query: dict
-    :param current_user: the user who perform the query
-    :type current_user: TokenData
-    :return: response data
-    :rtype: dict(json)
-    """
-
-    # the user is SAIL tech support, no restriction
-    if UserRole.ADMIN in current_user.roles:
-        response = await audit_query(query)
-    # for other user identity, this is forbidden
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
-    return response
-
-
-########################################################################################################################
-async def audit_query(
-    query: dict,
-):
-    """
-    send a query content to audit server, they possible query fields are:
-
-    query: The LogQL query to perform
-    limit: The max number of entries to return. It defaults to 100. Only applies to query types which produce a stream(log lines) response.
-    start: The start time for the query as a nanosecond Unix epoch or another supported format. Defaults to one hour ago.
-    end: The end time for the query as a nanosecond Unix epoch or another supported format. Defaults to now.
-    direction: Determines the sort order of logs. Supported values are forward or backward. Defaults to backward.
-
-    :param query: query content
-    :type query: dict
-    :return: response
-    :rtype: dict
-    """
-    event_loop = asyncio.get_event_loop()
-
-    response = await event_loop.run_in_executor(
-        None,
-        functools.partial(requests.get, audit_server_endpoint, params=query),
-    )
-    return response
+    # Execute the query asynchronously
+    async with aiohttp.ClientSession() as session:
+        async with session.get(audit_server_endpoint, params=query) as response:
+            if response.status != 200:
+                raise HTTPException(status_code=response.status, detail=response.reason)
+            return QueryResult(status="success", data=(await response.json()))

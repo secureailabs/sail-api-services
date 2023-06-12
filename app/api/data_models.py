@@ -19,7 +19,6 @@ from fastapi.encoders import jsonable_encoder
 
 from app.api.authentication import get_current_user
 from app.data import operations as data_service
-from app.log import log_message
 from app.models.authentication import TokenData
 from app.models.common import PyObjectId
 from app.models.data_models import (
@@ -174,9 +173,6 @@ async def register_data_model(
     # Add to the database
     await DataModel.create(data_model_db)
 
-    message = f"[Add Data Model]: user_id:{current_user.id}, data_model_id: {data_model_db.id}"
-    await log_message(message)
-
     return RegisterDataModel_Out(**data_model_db.dict())
 
 
@@ -210,9 +206,6 @@ async def get_data_model_info(
         throw_on_not_found=True,
     )
 
-    message = f"[Get Data model Info]: user_id:{current_user.id}, data_model_id: {data_model_id}"
-    await log_message(message)
-
     return GetDataModel_Out(**(provision_db[0].dict()))
 
 
@@ -244,9 +237,6 @@ async def get_all_data_model_info(
     response_list: List[GetDataModel_Out] = []
     for model in data_model_info:
         response_list.append(GetDataModel_Out(**model.dict()))
-
-    message = f"[Get All Data model Info]: user_id:{current_user.id}"
-    await log_message(message)
 
     return GetMultipleDataModel_Out(data_models=response_list)
 
@@ -283,8 +273,7 @@ async def update_data_model(
         state=data_model_req.state,
     )
 
-    message = f"[Update Data Model]: user_id:{current_user.id}, data_model_id: {data_model_id}"
-    await log_message(message)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete(
@@ -311,8 +300,5 @@ async def delete_data_model(
     await DataModel.update(
         data_model_id=data_model_id, organization_id=current_user.organization_id, state=DataModelState.DELETED
     )
-
-    message = f"[Delete Data Model]: user_id:{current_user.id}, data_model_id: {data_model_id}"
-    await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -20,7 +20,6 @@ from fastapi.encoders import jsonable_encoder
 
 from app.api.authentication import get_current_user
 from app.data import operations as data_service
-from app.log import log_message
 from app.models.authentication import TokenData
 from app.models.common import PyObjectId
 from app.models.data_model_series import (
@@ -88,6 +87,8 @@ class DataModelSeries:
         if not query:
             raise Exception("Invalid query")
 
+        query["state"] = {"$ne": DataModelSeriesState.DELETED.value}
+
         response = await data_service.find_by_query(
             collection=DataModelSeries.DB_COLLECTION_DATA_MODEL_SERIES,
             query=jsonable_encoder(query),
@@ -124,9 +125,9 @@ class DataModelSeries:
 
         update_request = {}
         if state:
-            update_request["$set"] = {"state": state}
+            update_request["$set"] = {"state": state.value}
         if data_model_series_schema:
-            update_request["$set"] = {"schema": data_model_series_schema}
+            update_request["$set"] = {"series_schema": data_model_series_schema}
 
         if not update_request:
             raise Exception("Invalid update request")
@@ -134,7 +135,7 @@ class DataModelSeries:
         return await data_service.update_many(
             collection=DataModelSeries.DB_COLLECTION_DATA_MODEL_SERIES,
             query={"_id": str(data_model_series_id), "organization_id": str(organization_id)},
-            data=update_request,
+            data=jsonable_encoder(update_request),
         )
 
 
@@ -176,9 +177,6 @@ async def register_data_model_series(
     # Add to the database
     await DataModelSeries.create(data_model_series_db)
 
-    message = f"[Add Data Model dataframe]: user_id:{current_user.id}, data_model_series_id: {data_model_series_db.id}"
-    await log_message(message)
-
     return RegisterDataModelSeries_Out(**data_model_series_db.dict())
 
 
@@ -212,9 +210,6 @@ async def get_data_model_series_info(
         throw_on_not_found=True,
     )
 
-    message = f"[Get Data model series Info]: user_id:{current_user.id}, data_model_series_id: {data_model_series_id}"
-    await log_message(message)
-
     return GetDataModelSeries_Out(**(data_model_series_db[0].dict()))
 
 
@@ -246,9 +241,6 @@ async def get_all_data_model_series_info(
     response_list: List[GetDataModelSeries_Out] = []
     for model in data_model_series_info:
         response_list.append(GetDataModelSeries_Out(**model.dict()))
-
-    message = f"[Get All Data model series Info]: user_id:{current_user.id}"
-    await log_message(message)
 
     return GetMultipleDataModelSeries_Out(data_model_series=response_list)
 
@@ -283,12 +275,9 @@ async def update_data_model_series(
     await DataModelSeries.update(
         data_model_series_id=data_model_series_id,
         organization_id=current_user.organization_id,
-        data_model_series_schema=data_model_series_req.schema,  # type: ignore
+        data_model_series_schema=data_model_series_req.series_schema,
         state=data_model_series_req.state,
     )
-
-    message = f"[Update Data model series]: user_id:{current_user.id}, data_model_series_id: {data_model_series_id}"
-    await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -319,8 +308,5 @@ async def delete_data_model_series(
         organization_id=current_user.organization_id,
         state=DataModelSeriesState.DELETED,
     )
-
-    message = f"[Delete Data Model dataframe]: user_id:{current_user.id}, data_model_series_id: {data_model_series_id}"
-    await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

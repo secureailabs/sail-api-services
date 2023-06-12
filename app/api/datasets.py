@@ -23,7 +23,6 @@ import app.utils.azure as azure
 from app.api.accounts import get_organization
 from app.api.authentication import RoleChecker, get_current_user
 from app.data import operations as data_service
-from app.log import log_message
 from app.models.accounts import UserRole
 from app.models.authentication import TokenData
 from app.models.common import BasicObjectInfo, KeyVaultObject, PyObjectId
@@ -45,7 +44,6 @@ DB_COLLECTION_DATASETS = "datasets"
 router = APIRouter()
 
 
-########################################################################################################################
 @router.post(
     path="/datasets",
     description="Register new dataset",
@@ -91,13 +89,9 @@ async def register_dataset(
     # Create a file share for the dataset
     add_async_task(create_azure_file_share(dataset_db.id))
 
-    message = f"[Register Dataset]: user_id:{current_user.id}, dataset_id: {dataset_db.id}"
-    await log_message(message)
-
     return RegisterDataset_Out(**dataset_db.dict())
 
 
-########################################################################################################################
 @router.get(
     path="/datasets",
     description="Get list of all the datasets for the current organization",
@@ -125,13 +119,9 @@ async def get_all_datasets(current_user: TokenData = Depends(get_current_user)):
         response_dataset = GetDataset_Out(**dataset.dict(), organization=BasicObjectInfo(**organization.dict()))
         response_list_of_datasets.append(response_dataset)
 
-    message = f"[Get All Datasets]: user_id:{current_user.id}, datasets_ids: {datasets_ids}"
-    await log_message(message)
-
     return GetMultipleDataset_Out(datasets=response_list_of_datasets)
 
 
-########################################################################################################################
 @router.get(
     path="/datasets/{dataset_id}",
     description="Get the information about a dataset",
@@ -148,9 +138,6 @@ async def get_dataset(
     dataset = await get_dataset_internal(dataset_id, current_user)
     organization_info = await get_organization(organization_id=dataset.organization_id, current_user=current_user)
 
-    message = f"[Get Dataset]: user_id:{current_user.id}"
-    await log_message(message)
-
     return GetDataset_Out(**dataset.dict(), organization=BasicObjectInfo(**organization_info.dict()))
 
 
@@ -164,7 +151,6 @@ async def get_dataset_internal(
     return Dataset_Db(**dataset)  # type: ignore
 
 
-########################################################################################################################
 @router.put(
     path="/datasets/{dataset_id}",
     description="Update dataset information",
@@ -200,13 +186,9 @@ async def update_dataset(
         {"$set": jsonable_encoder(dataset_db)},
     )
 
-    message = f"[Update Dataset]: user_id:{current_user.id}, dataset_id: {dataset_id}"
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.delete(
     path="/datasets/{dataset_id}",
     description="Disable the dataset",
@@ -234,9 +216,6 @@ async def soft_delete_dataset(
         {"_id": str(dataset_id)},
         {"$set": jsonable_encoder(dataset_db)},
     )
-
-    message = f"[Soft Delete Dataset]: user_id:{current_user.id}, dataset_id: {dataset_id}"
-    await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

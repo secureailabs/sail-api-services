@@ -27,7 +27,6 @@ from app.api.authentication import get_current_user
 from app.api.data_federations import get_data_federation, get_existing_dataset_key
 from app.api.dataset_versions import get_all_dataset_versions, get_dataset_version
 from app.data import operations as data_service
-from app.log import log_message
 from app.models.authentication import TokenData
 from app.models.common import BasicObjectInfo, PyObjectId
 from app.models.secure_computation_nodes import (
@@ -149,13 +148,9 @@ async def register_secure_computation_node(
 
     await data_service.insert_one(DB_COLLECTION_SECURE_COMPUTATION_NODE, jsonable_encoder(secure_computation_node_db))
 
-    message = f"[Register Secure Computation Node]: user_id:{current_user.id}, SCN_id: {secure_computation_node_db.id}"
-    await log_message(message)
-
     return RegisterSecureComputationNode_Out(**secure_computation_node_db.dict())
 
 
-########################################################################################################################
 @router.get(
     path="/secure-computation-node",
     description="Get list of all the secure_computation_node for the current user",
@@ -224,9 +219,6 @@ async def get_all_secure_computation_nodes(
 
             response_secure_computation_nodes.append(response_secure_computation_node)
 
-    message = f"[Get All Secure Computation Nodes]: user_id:{current_user.id}"
-    await log_message(message)
-
     return GetMultipleSecureComputationNode_Out(secure_computation_nodes=response_secure_computation_nodes)
 
 
@@ -292,9 +284,6 @@ async def get_secure_computation_node(
         url=secure_computation_node.url,
     )
 
-    message = f"[Get Secure Computation Node]: user_id:{current_user.id}, SCN_id: {secure_computation_node_id}"
-    await log_message(message)
-
     return response_secure_computation_node
 
 
@@ -335,9 +324,6 @@ async def update_secure_computation_node(
         {"$set": jsonable_encoder(secure_computation_node_db)},
     )
 
-    message = f"[Update Secure Computation Node]: user_id:{current_user.id}, SCN_id: {secure_computation_node_id}"
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -363,9 +349,6 @@ async def deprovision_secure_computation_node(
 
     # Start a background task to deprovision the secure computation node which will update the status
     add_async_task(delete_resource_group(secure_computation_node_id, current_user))
-
-    message = f"[Deprovision Secure Computation Nodes]: user_id:{current_user.id}, secure_computation_node_id: {secure_computation_node_id}"
-    await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

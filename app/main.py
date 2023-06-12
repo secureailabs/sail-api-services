@@ -12,9 +12,9 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
+import base64
 import json
 import logging
-import threading
 import traceback
 
 import aiohttp
@@ -44,8 +44,8 @@ from app.api import (
     secure_computation_nodes,
 )
 from app.data import operations as data_service
-from app.log import _AsyncLogger, log_message
 from app.models.common import PyObjectId
+from app.utils.logging import LogLevel, Resource, add_log_message
 from app.utils.secrets import get_secret
 
 server = FastAPI(
@@ -60,19 +60,6 @@ server.openapi = custom_openapi(server)
 origins = [
     "*",
 ]
-
-
-class Audit_log_task(threading.Thread):
-    """
-    Auxillary class for audit log server in isolated thread
-    """
-
-    def run(self):
-        """
-        Start async logger server
-        """
-        _AsyncLogger.start_log_poller(_AsyncLogger.ipc, _AsyncLogger.port)
-
 
 # Add all the API services here exposed to the public
 server.include_router(audit.router)
@@ -161,10 +148,6 @@ async def server_error_exception_handler(request: Request, exc: Exception):
 utils.validation_error_response_definition = ValidationError.schema()
 
 
-# Run the uvicorn server
-# uvicorn.run("app.main:server", host="127.0.0.1", port=8000, log_level="info")
-
-
 @server.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     if server.openapi_url is None:
@@ -180,10 +163,33 @@ async def custom_swagger_ui_html():
     )
 
 
-@server.on_event("startup")
-async def start_audit_logger():
+@server.middleware("http")
+async def add_audit_log(request: Request, call_next):
     """
-    Start async audit logger server at start up as a background task
+    Add audit log to the request
+
+    :param request: The http request object
+    :type request: Request
+    :param call_next: The next function to call
+    :type call_next: function
     """
-    t = Audit_log_task()
-    t.start()
+    response: Response = await call_next(request)
+
+    # Extract the user id from the JWT token in the request header
+    user_id = None
+    if "Authorization" in request.headers:
+        auth_token_list = request.headers["Authorization"].split(".")
+        if len(auth_token_list) > 1:
+            user_info_base_64 = request.headers["Authorization"].split(".")[1]
+            user_info = json.loads(base64.b64decode(user_info_base_64 + "=="))
+            user_id = user_info["_id"]
+
+    message = {
+        "user_id": user_id,
+        "request": f"{request.method} {request.url}",
+        "response": f"{response.status_code}",
+    }
+
+    add_log_message(LogLevel.INFO, Resource.USER_ACTIVITY, message)
+
+    return response

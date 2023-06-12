@@ -20,7 +20,6 @@ from fastapi.encoders import jsonable_encoder
 from app.api.authentication import get_current_user
 from app.api.data_federations import get_data_federation
 from app.data import operations as data_service
-from app.log import log_message
 from app.models.authentication import TokenData
 from app.models.common import PyObjectId
 from app.models.data_model_dataframes import (
@@ -85,6 +84,8 @@ class DataModelDataframe:
         if not query:
             raise Exception("Invalid query")
 
+        query["state"] = {"$ne": DataModelDataframeState.DELETED.value}
+
         response = await data_service.find_by_query(
             collection=DataModelDataframe.DB_COLLECTION_DATA_MODEL_DATAFRAME,
             query=jsonable_encoder(query),
@@ -122,7 +123,7 @@ class DataModelDataframe:
 
         update_request = {}
         if state:
-            update_request["$set"] = {"state": state}
+            update_request["$set"] = {"state": state.value}
         if data_model_series_to_add:
             update_request["$push"] = {"data_model_series": {"$each": list(map(str, data_model_series_to_add))}}
         if data_model_series_to_remove:
@@ -134,7 +135,7 @@ class DataModelDataframe:
         return await data_service.update_many(
             collection=DataModelDataframe.DB_COLLECTION_DATA_MODEL_DATAFRAME,
             query={"_id": str(data_model_dataframe_id), "organization_id": str(organization_id)},
-            data=update_request,
+            data=jsonable_encoder(update_request),
         )
 
 
@@ -176,11 +177,6 @@ async def register_data_model_dataframe(
     # Add to the database
     await DataModelDataframe.create(data_model_dataframe_db)
 
-    message = (
-        f"[Add Data Model dataframe]: user_id:{current_user.id}, data_model_dataframe_id: {data_model_dataframe_db.id}"
-    )
-    await log_message(message)
-
     return RegisterDataModelDataframe_Out(**data_model_dataframe_db.dict())
 
 
@@ -214,9 +210,6 @@ async def get_data_model_dataframe_info(
         throw_on_not_found=True,
     )
 
-    message = f"[Get Data model dataframe Info]: user_id:{current_user.id}, data_model_dataframe_id: {data_model_dataframe_id}"
-    await log_message(message)
-
     return GetDataModelDataframe_Out(**(data_model_dataframe_db[0].dict()))
 
 
@@ -248,9 +241,6 @@ async def get_all_data_model_dataframe_info(
     response_list: List[GetDataModelDataframe_Out] = []
     for model in data_model_dataframe_info:
         response_list.append(GetDataModelDataframe_Out(**model.dict()))
-
-    message = f"[Get All Data model dataframe Info]: user_id:{current_user.id}"
-    await log_message(message)
 
     return GetMultipleDataModelDataframe_Out(data_model_dataframes=response_list)
 
@@ -288,11 +278,6 @@ async def update_data_model_dataframe(
         data_model_series_to_remove=data_model_dataframe_req.data_model_series_to_remove,
     )
 
-    message = (
-        f"[Update Data model dataframe]: user_id:{current_user.id}, data_model_dataframe_id: {data_model_dataframe_id}"
-    )
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -322,10 +307,5 @@ async def delete_data_model_dataframe(
         organization_id=current_user.organization_id,
         state=DataModelDataframeState.DELETED,
     )
-
-    message = (
-        f"[Delete Data Model dataframe]: user_id:{current_user.id}, data_model_dataframe_id: {data_model_dataframe_id}"
-    )
-    await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

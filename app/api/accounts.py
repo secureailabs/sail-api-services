@@ -18,7 +18,6 @@ from fastapi.encoders import jsonable_encoder
 
 from app.api.authentication import RoleChecker, get_current_user, get_password_hash
 from app.data import operations as data_service
-from app.log import log_message
 from app.models.accounts import (
     GetMultipleOrganizations_Out,
     GetMultipleUsers_Out,
@@ -81,9 +80,6 @@ async def register_organization(
 
     await data_service.insert_one(DB_COLLECTION_USERS, jsonable_encoder(admin_user_db))
 
-    message = f"[Organization Register]: name:{organization.admin_name}, email:{organization.admin_email}, job_title:{organization.admin_job_title}"
-    await log_message(message)
-
     return organization_db
 
 
@@ -101,9 +97,6 @@ async def register_organization(
 )
 async def get_all_organizations(current_user: TokenData = Depends(get_current_user)):
     organizations = await data_service.find_all(DB_COLLECTION_ORGANIZATIONS)
-
-    message = f"[Get All Organizations]: user_id:{current_user.id}"
-    await log_message(message)
 
     return GetMultipleOrganizations_Out(organizations=organizations)
 
@@ -125,9 +118,6 @@ async def get_organization(
     organization = await data_service.find_one(DB_COLLECTION_ORGANIZATIONS, {"_id": str(organization_id)})
     if not organization:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
-
-    message = f"[Get Organizaton]: user_id:{current_user.id}, organization:{organization_id}"
-    await log_message(message)
 
     return GetOrganizations_Out(**organization)
 
@@ -167,9 +157,6 @@ async def update_organization(
         DB_COLLECTION_ORGANIZATIONS, {"_id": str(organization_id)}, {"$set": jsonable_encoder(organization_db)}
     )
 
-    message = f"[Organization Update]: user_id:{current_user.id}, organization_id:{organization_id}, update_organization_info:{update_organization_info}"
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -204,9 +191,6 @@ async def soft_delete_organization(
     )
     if not organization_disable_result.modified_count:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
-
-    message = f"[Organization Soft Delete]: user_id:{current_user.id}, organization_id:{organization_id}"
-    await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -244,9 +228,6 @@ async def register_user(
     )
 
     await data_service.insert_one(DB_COLLECTION_USERS, jsonable_encoder(user_db))
-
-    message = f"[Register User]: user_id:{current_user.id}, user_email:{user.email}"
-    await log_message(message)
 
     return user_db
 
@@ -294,9 +275,6 @@ async def get_users(
         for user in users
     ]
 
-    message = f"[Get Users]: user_id:{current_user.id}, users:{users}"
-    await log_message(message)
-
     return GetMultipleUsers_Out(users=users_out)
 
 
@@ -331,9 +309,6 @@ async def get_all_admins(organization_id: PyObjectId) -> GetMultipleUsers_Out:
         for user in users
     ]
 
-    message = f"[Get All Admins]"
-    await log_message(message)
-
     return GetMultipleUsers_Out(users=users_out)
 
 
@@ -366,9 +341,6 @@ async def get_user(
     if not organization_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User organization not found")
     organization_db = Organization_db(**organization_db)
-
-    message = f"[Get Users]: user_id:{current_user.id}"
-    await log_message(message)
 
     return GetUsers_Out(
         **user_db.dict(), organization=BasicObjectInfo(id=organization_db.id, name=organization_db.name)
@@ -428,9 +400,6 @@ async def update_user_info(
         {"$set": jsonable_encoder(user_db)},
     )
 
-    message = f"[Update User Info], user_id:{current_user.id}, updated_target:{user_id}, updated_target_info: {update_user_info}"
-    await log_message(message)
-
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -466,8 +435,5 @@ async def soft_delete_user(
             {"_id": str(user_id), "organization_id": str(organization_id)},
             {"$set": jsonable_encoder(user_db)},
         )
-
-    message = f"[Soft Delete User]: user_id:{current_user.id}, deleted_user:{user_id}"
-    await log_message(message)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

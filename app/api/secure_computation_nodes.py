@@ -16,7 +16,7 @@ import json
 from typing import List
 
 import yaml
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Response, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 from sail_dns_management_client import Client as DNSClient
 from sail_dns_management_client.api.default import add_domain_dns_post

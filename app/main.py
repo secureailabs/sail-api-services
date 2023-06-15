@@ -16,6 +16,8 @@ import base64
 import json
 import logging
 import traceback
+from typing import Callable
+from urllib.parse import parse_qs, urlencode
 
 import aiohttp
 import fastapi.openapi.utils as utils
@@ -136,7 +138,7 @@ async def server_error_exception_handler(request: Request, exc: Exception):
     await data_service.insert_one("errors", jsonable_encoder(message))
 
     # Add the exception to the audit log as well
-    # await log_message(json.dumps(message))
+    add_log_message(LogLevel.ERROR, Resource.USER_ACTIVITY, json.dumps(message))
 
     # Respond with a 500 error
     return Response(
@@ -163,8 +165,21 @@ async def custom_swagger_ui_html():
     )
 
 
+async def set_body(request: Request, body: bytes):
+    async def receive():
+        return {"type": "http.request", "body": body}
+
+    request._receive = receive
+
+
+async def get_body(request: Request) -> bytes:
+    body = await request.body()
+    await set_body(request, body)
+    return body
+
+
 @server.middleware("http")
-async def add_audit_log(request: Request, call_next):
+async def add_audit_log(request: Request, call_next: Callable):
     """
     Add audit log to the request
 
@@ -173,6 +188,24 @@ async def add_audit_log(request: Request, call_next):
     :param call_next: The next function to call
     :type call_next: function
     """
+    await set_body(request, await request.body())
+    request_body = await get_body(request)
+
+    # remove sensitive data from the request body
+    if "Content-Type" in request.headers:
+        if request.headers.get("Content-Type") == "application/json":
+            request_body = json.loads(request_body)
+            if "password" in request_body:
+                request_body["password"] = "****"
+            if "admin_password" in request_body:
+                request_body["password"] = "****"
+            request_body = json.dumps(request_body)
+        if request.headers.get("Content-Type") == "application/x-www-form-urlencoded":
+            request_body = parse_qs(request_body.decode("utf-8"))
+            if "password" in request_body:
+                request_body["password"] = "****"
+            request_body = urlencode(request_body, doseq=True)
+
     response: Response = await call_next(request)
 
     # Extract the user id from the JWT token in the request header
@@ -187,6 +220,7 @@ async def add_audit_log(request: Request, call_next):
     message = {
         "user_id": user_id,
         "request": f"{request.method} {request.url}",
+        "request_body": f"{request_body}",
         "response": f"{response.status_code}",
     }
 

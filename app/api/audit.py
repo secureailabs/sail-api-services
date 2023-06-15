@@ -22,6 +22,7 @@ from app.api.authentication import get_current_user
 from app.models.accounts import UserRole
 from app.models.audit import QueryResult
 from app.models.authentication import TokenData
+from app.utils.logging import Resource
 from app.utils.secrets import get_secret
 
 router = APIRouter()
@@ -30,7 +31,7 @@ audit_server_ip = get_secret("audit_service_ip")
 
 audit_server_endpoint = f"http://{audit_server_ip}:3100/loki/api/v1/query_range"
 # audit_server_endpoint = f"http://172.20.100.4:3100/loki/api/v1/query_range"
-loki_query_pattern = "| pattern \"<time> - <level> - [<message_type>] {'user_id': '<user_id>', 'request': '<method> <url>', 'response': 'response_code'}\""
+loki_query_pattern = "| pattern \"<time> - <level> - [<message_type>] {'user_id': '<user_id>', 'request': '<method> <url>', 'request_body': <request_body> 'response': 'response_code'}\""
 
 
 ########################################################################################################################
@@ -45,8 +46,13 @@ loki_query_pattern = "| pattern \"<time> - <level> - [<message_type>] {'user_id'
 )
 async def audit_incidents_query(
     label: StrictStr,
-    user_id: Optional[StrictStr] = Query(default=None, description="query events related to a specific user id"),
-    data_id: Optional[StrictStr] = Query(default=None, description="query events related to a specific data id"),
+    user_id: Optional[StrictStr] = Query(default=None, description="query events related to a specific user"),
+    resource: Optional[Resource] = Query(default=None, description="query events related to a specific resource"),
+    dataset_id: Optional[StrictStr] = Query(default=None, description="query events related to a specific dataset"),
+    scn_id: Optional[StrictStr] = Query(default=None, description="query events related to a specific scn"),
+    data_mode_id: Optional[StrictStr] = Query(
+        default=None, description="query events related to a specific data model"
+    ),
     start: Optional[Union[int, float]] = Query(default=None, description="starting timestamp of the query range"),
     end: Optional[Union[int, float]] = Query(default=None, description="ending timestamp of the query range"),
     limit: Optional[int] = Query(default=None, description="query events number limit"),
@@ -78,24 +84,27 @@ async def audit_incidents_query(
     :return: query results
     :rtype: dict(json)
     """
-    query_raw = locals()
-    query = {}
-    query_raw.pop("current_user")
-    for key in query_raw:
-        if query_raw[key]:
-            query[key] = query_raw[key]
-
-    label = query.pop("label")
-    response = {}
-
-    query_str = f'{{job="{label}"}}'
-    query["query"] = query_str
 
     # Create a query string for Loki
-    if "user_id" in query:
-        user_id = query.pop("user_id")
-        query_str = f'{query_str}{loki_query_pattern} | user_id = "{user_id}"'
-        query["query"] = query_str
+    query_str = f'{{job="{label}"}}'
+
+    # Add parameters
+    query_str = create_query(query_str)
+
+    # Add optional parameters
+    if limit:
+        query_str = f"{query_str} | limit {limit}"
+    if start:
+        query_str = f"{query_str} | start {start}"
+    if end:
+        query_str = f"{query_str} | end {end}"
+    if step:
+        query_str = f"{query_str} | step {step}"
+    if direction:
+        query_str = f"{query_str} | direction {direction}"
+
+    # Create a query for Loki
+    query = {"query": query_str}
 
     # Execute the query asynchronously
     async with aiohttp.ClientSession() as session:
@@ -103,3 +112,7 @@ async def audit_incidents_query(
             if response.status != 200:
                 raise HTTPException(status_code=response.status, detail=response.reason)
             return QueryResult(status="success", data=(await response.json()))
+
+
+def create_query(query_str: str) -> str:
+    return query_str + loki_query_pattern

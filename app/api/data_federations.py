@@ -24,7 +24,6 @@ from app.api.accounts import get_all_admins, get_organization, get_user
 from app.api.authentication import RoleChecker, get_current_user
 from app.api.datasets import get_dataset, get_datset_encryption_key
 from app.api.emails import send_email
-from app.api.internal_utils import cache_get_basic_info_datasets, cache_get_basic_info_organization
 from app.data import operations as data_service
 from app.models.accounts import GetUsers_Out, UserRole
 from app.models.authentication import TokenData
@@ -49,6 +48,7 @@ from app.models.data_federations import (
 )
 from app.models.datasets import DatasetEncryptionKey_Out
 from app.models.emails import EmailRequest
+from app.utils import cache
 from app.utils.background_couroutines import add_async_task
 
 DB_COLLECTION_DATA_FEDERATIONS = "data-federations"
@@ -147,39 +147,34 @@ async def get_all_data_federations(
 
     response_list_of_data_federations: List[GetDataFederation_Out] = []
 
-    # Cache the organization information
-    organization_cache: Dict[PyObjectId, BasicObjectInfo] = {}
-    dataset_cache: Dict[PyObjectId, BasicObjectInfo] = {}
-
     # Add the organization information to the data federation
     for data_federation in data_federations:
         data_federation = DataFederation_Db(**data_federation)
 
         # Add the organization information to the data federation
-        organization_cache, data_submitter_basic_info_list = await cache_get_basic_info_organization(
-            organization_cache, [data_federation.organization_id], current_user
-        )
+        organization_info = await cache.get_basic_orgnization(data_federation.organization_id)
 
         # Add the data submitter organization information to the data federation
-        organization_cache, data_submitter_basic_info_list = await cache_get_basic_info_organization(
-            organization_cache,
-            [data_submitter.organization_id for data_submitter in data_federation.data_submitters],
-            current_user,
-        )
+        data_submitter_basic_info_list = []
+        for data_submitter in data_federation.data_submitters:
+            data_submitter_basic_info = await cache.get_basic_orgnization(data_submitter.organization_id)
+            data_submitter_basic_info_list.append(data_submitter_basic_info)
 
         # Add the research organization information to the data federation
-        organization_cache, researcher_basic_info_list = await cache_get_basic_info_organization(
-            organization_cache, data_federation.research_organizations_id, current_user
-        )
+        researcher_basic_info_list = []
+        for researcher in data_federation.research_organizations_id:
+            researcher_basic_info = await cache.get_basic_orgnization(researcher)
+            researcher_basic_info_list.append(researcher_basic_info)
 
         # Add the dataset information to the data federation
-        dataset_cache, dataset_basic_info_list = await cache_get_basic_info_datasets(
-            dataset_cache, data_federation.datasets_id, current_user
-        )
+        dataset_basic_info_list = []
+        for dataset in data_federation.datasets_id:
+            dataset_basic_info = await cache.get_basic_dataset(dataset)
+            dataset_basic_info_list.append(dataset_basic_info)
 
         response_data_federation = GetDataFederation_Out(
             **data_federation.dict(),
-            organization=organization_cache[data_federation.organization_id],
+            organization=organization_info,
             data_submitter_organizations=data_submitter_basic_info_list,
             research_organizations=researcher_basic_info_list,
             datasets=dataset_basic_info_list,
@@ -208,23 +203,30 @@ async def get_data_federation(
 
     data_federation = DataFederation_Db(**data_federation)
 
-    # Add the organization information to the data federation
-    _, organization = await cache_get_basic_info_organization({}, [data_federation.organization_id], current_user)
+    # Add the basic organization information to the data federation
+    organization_info = await cache.get_basic_orgnization(data_federation.organization_id)
 
-    _, data_submitter_basic_info_list = await cache_get_basic_info_organization(
-        {}, [data_submitter.organization_id for data_submitter in data_federation.data_submitters], current_user
-    )
+    # Add the basic data submitter organization information to the data federation
+    data_submitter_basic_info_list = []
+    for data_submitter in data_federation.data_submitters:
+        data_submitter_basic_info = await cache.get_basic_orgnization(data_submitter.organization_id)
+        data_submitter_basic_info_list.append(data_submitter_basic_info)
 
-    _, researcher_basic_info_list = await cache_get_basic_info_organization(
-        {}, data_federation.research_organizations_id, current_user
-    )
+    # Add the basic research organization information to the data federation
+    researcher_basic_info_list = []
+    for researcher in data_federation.research_organizations_id:
+        researcher_basic_info = await cache.get_basic_orgnization(researcher)
+        researcher_basic_info_list.append(researcher_basic_info)
 
-    # Add the dataset information to the data federation
-    _, dataset_basic_info_list = await cache_get_basic_info_datasets({}, data_federation.datasets_id, current_user)
+    # Add the basic dataset information to the data federation
+    dataset_basic_info_list = []
+    for dataset in data_federation.datasets_id:
+        dataset_basic_info = await cache.get_basic_dataset(dataset)
+        dataset_basic_info_list.append(dataset_basic_info)
 
     response_data_federation = GetDataFederation_Out(
         **data_federation.dict(),
-        organization=organization[0],
+        organization=organization_info,
         data_submitter_organizations=data_submitter_basic_info_list,
         research_organizations=researcher_basic_info_list,
         datasets=dataset_basic_info_list,
@@ -394,13 +396,12 @@ async def register_data_submitter(
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     # Ensure this is a valid organization before adding to the list
-    _, organization = await cache_get_basic_info_organization({}, [data_submitter_organization_id], current_user)
-
+    organization = await cache.get_basic_orgnization(data_submitter_organization_id)
     if not organization:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Data Submitter organization not found")
 
     # Generate RSA key vault keys and update with their handles
-    key_name = f"{str(data_federation_id)}-{str(organization[0].id)}"
+    key_name = f"{str(data_federation_id)}-{str(organization.id)}"
     data_submitter_key = await generate_rsa_key(key_name)
 
     # Add the data submitter to the federation list
@@ -460,7 +461,7 @@ async def register_researcher(
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     # Ensure this is a valid organization before adding to the list
-    _, organization = await cache_get_basic_info_organization({}, [researcher_organization_id], current_user)
+    organization = await cache.get_basic_orgnization(researcher_organization_id)
 
     if not organization:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")

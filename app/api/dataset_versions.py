@@ -21,7 +21,6 @@ import app.utils.azure as azure
 from app.api.accounts import get_organization
 from app.api.authentication import RoleChecker, get_current_user
 from app.api.datasets import get_dataset
-from app.api.internal_utils import cache_get_basic_info_organization
 from app.data import operations as data_service
 from app.models.accounts import UserRole
 from app.models.authentication import TokenData
@@ -37,6 +36,7 @@ from app.models.dataset_versions import (
     UpdateDatasetVersion_In,
 )
 from app.models.datasets import DatasetState
+from app.utils import cache
 from app.utils.background_couroutines import add_async_task
 from app.utils.secrets import get_secret
 
@@ -154,10 +154,10 @@ async def get_dataset_version(
     dataset_version = DatasetVersion_Db(**dataset_version)  # type: ignore
 
     # Add the organization information to the dataset version
-    _, organization = await cache_get_basic_info_organization({}, [dataset_version.organization_id], current_user)
+    organization = await cache.get_basic_orgnization(dataset_version.organization_id)
 
     response_data_version = GetDatasetVersion_Out(
-        **dataset_version.dict(), organization=BasicObjectInfo(id=organization[0].id, name=organization[0].name)
+        **dataset_version.dict(), organization=BasicObjectInfo(id=organization.id, name=organization.name)
     )
 
     return response_data_version

@@ -88,6 +88,7 @@ def getEmailInviteContent(data_federation: str, inviter_organization: str) -> st
     response_model=RegisterDataFederation_Out,
     response_model_by_alias=False,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
     operation_id="register_data_federation",
 )
 async def register_data_federation(
@@ -236,6 +237,7 @@ async def get_data_federation(
     path="/data-federations/{data_federation_id}",
     description="Update data federation information",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
     operation_id="update_data_federation",
 )
 async def update_data_federation(
@@ -271,6 +273,7 @@ async def update_data_federation(
     path="/data-federations/{data_federation_id}/researcher/{researcher_organization_id}",
     description="Invite a researcher to join a data federation",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
     operation_id="invite_researcher",
 )
 async def invite_researcher(
@@ -351,6 +354,7 @@ async def invite_researcher(
     path="/data-federations/{data_federation_id}/data-submitter/{data_submitter_organization_id}",
     description="Automatically add a data submitter to the data federation, bypassing an invite path",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
     operation_id="register_data_submitter",
 )
 async def register_data_submitter(
@@ -420,6 +424,7 @@ async def register_data_submitter(
     path="/data-federations/{data_federation_id}/researcher/{researcher_organization_id}",
     description="Automatically add a researcher to the data federation, bypassing an invite path",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
     operation_id="register_researcher",
 )
 async def register_researcher(
@@ -476,6 +481,7 @@ async def register_researcher(
     path="/data-federations/{data_federation_id}/data-submitter/{data_submitter_organization_id}",
     description="Invite a data submitter to join a data federation",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
     operation_id="invite_data_submitter",
 )
 async def invite_data_submitter(
@@ -560,6 +566,7 @@ async def invite_data_submitter(
     path="/data-federations/{data_federation_id}",
     description="Add a data model to a data federation",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
     operation_id="add_data_model",
 )
 async def add_data_model(
@@ -608,8 +615,8 @@ async def add_data_model(
 @router.delete(
     path="/data-federations/{data_federation_id}",
     description="Disable the data federation",
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ADMIN]))],
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ORGANIZATION_ADMIN, UserRole.PAG_ADMIN]))],
     operation_id="soft_delete_data_federation",
 )
 async def soft_delete_data_federation(
@@ -665,7 +672,7 @@ async def register_invite(invite_req: RegisterInvite_In):
     response_model_by_alias=False,
     response_model_exclude_unset=True,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ADMIN]))],
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ORGANIZATION_ADMIN]))],
     operation_id="get_all_invites",
 )
 async def get_all_invites(
@@ -717,7 +724,7 @@ async def get_all_invites(
     response_model_by_alias=False,
     response_model_exclude_unset=True,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ADMIN]))],
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ORGANIZATION_ADMIN]))],
     operation_id="get_invite",
 )
 async def get_invite(
@@ -765,7 +772,7 @@ async def get_invite(
     description="Accept or reject an invite",
     response_model_by_alias=False,
     response_model_exclude_unset=True,
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ADMIN]))],
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ORGANIZATION_ADMIN]))],
     operation_id="accept_or_reject_invite",
 )
 async def accept_or_reject_invite(
@@ -873,6 +880,7 @@ async def send_invite_email(subject: str, email_body: str, emails: List[EmailStr
     path="/data-federations/{data_federation_id}/datasets/{dataset_id}",
     description="Add a dataset to a data federation",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
     operation_id="add_dataset",
 )
 async def add_dataset(
@@ -932,6 +940,7 @@ async def add_dataset(
     path="/data-federations/{data_federation_id}/datasets/{dataset_id}",
     description="Remove a dataset from a data federation",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
     operation_id="remove_dataset",
 )
 async def remove_dataset(

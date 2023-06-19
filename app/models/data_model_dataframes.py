@@ -18,7 +18,7 @@ from typing import List, Optional
 
 from pydantic import Field
 
-from app.models.common import BasicObjectInfo, PyObjectId, SailBaseModel
+from app.models.common import PyObjectId, SailBaseModel
 
 
 class DataModelDataframeState(Enum):

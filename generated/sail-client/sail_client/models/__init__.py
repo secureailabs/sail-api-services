@@ -59,6 +59,7 @@ from .register_secure_computation_node_in import RegisterSecureComputationNodeIn
 from .register_secure_computation_node_out import RegisterSecureComputationNodeOut
 from .register_user_in import RegisterUserIn
 from .register_user_out import RegisterUserOut
+from .resource import Resource
 from .secure_computation_node_size import SecureComputationNodeSize
 from .secure_computation_node_state import SecureComputationNodeState
 from .series_data_model_schema import SeriesDataModelSchema
@@ -136,6 +137,7 @@ __all__ = (
     "RegisterSecureComputationNodeOut",
     "RegisterUserIn",
     "RegisterUserOut",
+    "Resource",
     "SecureComputationNodeSize",
     "SecureComputationNodeState",
     "SeriesDataModelSchema",

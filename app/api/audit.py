@@ -31,7 +31,7 @@ audit_server_ip = get_secret("audit_service_ip")
 
 audit_server_endpoint = f"http://{audit_server_ip}:3100/loki/api/v1/query_range"
 # audit_server_endpoint = f"http://172.20.100.4:3100/loki/api/v1/query_range"
-loki_query_pattern = "| pattern \"<time> - <level> - [<message_type>] {'user_id': '<user_id>', 'request': '<method> <url>', 'request_body': <request_body> 'response': 'response_code'}\""
+loki_query_pattern = "| pattern \"<time> - <level> - [<message_type>] {'user_id': '<user_id>', 'request': '<method> <url>', 'request_body': '<request_body>' 'response': 'response_code'}\""
 
 
 ########################################################################################################################

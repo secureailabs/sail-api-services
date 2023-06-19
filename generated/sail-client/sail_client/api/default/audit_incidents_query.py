@@ -5,8 +5,8 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.http_exception_obj import HTTPExceptionObj
 from ...models.query_result import QueryResult
+from ...models.resource import Resource
 from ...models.validation_error import ValidationError
 from ...types import UNSET, Response, Unset
 
@@ -16,7 +16,10 @@ def _get_kwargs(
     client: AuthenticatedClient,
     label: str,
     user_id: Union[Unset, None, str] = UNSET,
-    data_id: Union[Unset, None, str] = UNSET,
+    resource: Union[Unset, None, Resource] = UNSET,
+    dataset_id: Union[Unset, None, str] = UNSET,
+    scn_id: Union[Unset, None, str] = UNSET,
+    data_mode_id: Union[Unset, None, str] = UNSET,
     start: Union[None, Unset, float, int] = UNSET,
     end: Union[None, Unset, float, int] = UNSET,
     limit: Union[Unset, None, int] = UNSET,
@@ -33,7 +36,17 @@ def _get_kwargs(
 
     params["user_id"] = user_id
 
-    params["data_id"] = data_id
+    json_resource: Union[Unset, None, str] = UNSET
+    if not isinstance(resource, Unset):
+        json_resource = resource.value if resource else None
+
+    params["resource"] = json_resource
+
+    params["dataset_id"] = dataset_id
+
+    params["scn_id"] = scn_id
+
+    params["data_mode_id"] = data_mode_id
 
     json_start: Union[None, Unset, float, int]
     if isinstance(start, Unset):
@@ -76,9 +89,7 @@ def _get_kwargs(
     }
 
 
-def _parse_response(
-    *, client: Client, response: httpx.Response
-) -> Optional[Union[HTTPExceptionObj, QueryResult, ValidationError]]:
+def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Union[QueryResult, ValidationError]]:
     if response.status_code == HTTPStatus.OK:
         response_200 = QueryResult.from_dict(response.json())
 
@@ -87,23 +98,13 @@ def _parse_response(
         response_422 = ValidationError.from_dict(response.json())
 
         return response_422
-    if response.status_code == HTTPStatus.FORBIDDEN:
-        response_403 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_403
-    if response.status_code == HTTPStatus.NOT_FOUND:
-        response_404 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_404
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
-def _build_response(
-    *, client: Client, response: httpx.Response
-) -> Response[Union[HTTPExceptionObj, QueryResult, ValidationError]]:
+def _build_response(*, client: Client, response: httpx.Response) -> Response[Union[QueryResult, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -117,21 +118,27 @@ def sync_detailed(
     client: AuthenticatedClient,
     label: str,
     user_id: Union[Unset, None, str] = UNSET,
-    data_id: Union[Unset, None, str] = UNSET,
+    resource: Union[Unset, None, Resource] = UNSET,
+    dataset_id: Union[Unset, None, str] = UNSET,
+    scn_id: Union[Unset, None, str] = UNSET,
+    data_mode_id: Union[Unset, None, str] = UNSET,
     start: Union[None, Unset, float, int] = UNSET,
     end: Union[None, Unset, float, int] = UNSET,
     limit: Union[Unset, None, int] = UNSET,
     step: Union[Unset, None, str] = UNSET,
     direction: Union[Unset, None, str] = UNSET,
-) -> Response[Union[HTTPExceptionObj, QueryResult, ValidationError]]:
+) -> Response[Union[QueryResult, ValidationError]]:
     """Audit Incidents Query
 
      query by logQL
 
     Args:
         label (str):
-        user_id (Union[Unset, None, str]): query events related to a specific user id
-        data_id (Union[Unset, None, str]): query events related to a specific data id
+        user_id (Union[Unset, None, str]): query events related to a specific user
+        resource (Union[Unset, None, Resource]): An enumeration.
+        dataset_id (Union[Unset, None, str]): query events related to a specific dataset
+        scn_id (Union[Unset, None, str]): query events related to a specific scn
+        data_mode_id (Union[Unset, None, str]): query events related to a specific data model
         start (Union[None, Unset, float, int]): starting timestamp of the query range
         end (Union[None, Unset, float, int]): ending timestamp of the query range
         limit (Union[Unset, None, int]): query events number limit
@@ -143,14 +150,17 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, QueryResult, ValidationError]]
+        Response[Union[QueryResult, ValidationError]]
     """
 
     kwargs = _get_kwargs(
         client=client,
         label=label,
         user_id=user_id,
-        data_id=data_id,
+        resource=resource,
+        dataset_id=dataset_id,
+        scn_id=scn_id,
+        data_mode_id=data_mode_id,
         start=start,
         end=end,
         limit=limit,
@@ -171,21 +181,27 @@ def sync(
     client: AuthenticatedClient,
     label: str,
     user_id: Union[Unset, None, str] = UNSET,
-    data_id: Union[Unset, None, str] = UNSET,
+    resource: Union[Unset, None, Resource] = UNSET,
+    dataset_id: Union[Unset, None, str] = UNSET,
+    scn_id: Union[Unset, None, str] = UNSET,
+    data_mode_id: Union[Unset, None, str] = UNSET,
     start: Union[None, Unset, float, int] = UNSET,
     end: Union[None, Unset, float, int] = UNSET,
     limit: Union[Unset, None, int] = UNSET,
     step: Union[Unset, None, str] = UNSET,
     direction: Union[Unset, None, str] = UNSET,
-) -> Optional[Union[HTTPExceptionObj, QueryResult, ValidationError]]:
+) -> Optional[Union[QueryResult, ValidationError]]:
     """Audit Incidents Query
 
      query by logQL
 
     Args:
         label (str):
-        user_id (Union[Unset, None, str]): query events related to a specific user id
-        data_id (Union[Unset, None, str]): query events related to a specific data id
+        user_id (Union[Unset, None, str]): query events related to a specific user
+        resource (Union[Unset, None, Resource]): An enumeration.
+        dataset_id (Union[Unset, None, str]): query events related to a specific dataset
+        scn_id (Union[Unset, None, str]): query events related to a specific scn
+        data_mode_id (Union[Unset, None, str]): query events related to a specific data model
         start (Union[None, Unset, float, int]): starting timestamp of the query range
         end (Union[None, Unset, float, int]): ending timestamp of the query range
         limit (Union[Unset, None, int]): query events number limit
@@ -197,14 +213,17 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPExceptionObj, QueryResult, ValidationError]
+        Union[QueryResult, ValidationError]
     """
 
     return sync_detailed(
         client=client,
         label=label,
         user_id=user_id,
-        data_id=data_id,
+        resource=resource,
+        dataset_id=dataset_id,
+        scn_id=scn_id,
+        data_mode_id=data_mode_id,
         start=start,
         end=end,
         limit=limit,
@@ -218,21 +237,27 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     label: str,
     user_id: Union[Unset, None, str] = UNSET,
-    data_id: Union[Unset, None, str] = UNSET,
+    resource: Union[Unset, None, Resource] = UNSET,
+    dataset_id: Union[Unset, None, str] = UNSET,
+    scn_id: Union[Unset, None, str] = UNSET,
+    data_mode_id: Union[Unset, None, str] = UNSET,
     start: Union[None, Unset, float, int] = UNSET,
     end: Union[None, Unset, float, int] = UNSET,
     limit: Union[Unset, None, int] = UNSET,
     step: Union[Unset, None, str] = UNSET,
     direction: Union[Unset, None, str] = UNSET,
-) -> Response[Union[HTTPExceptionObj, QueryResult, ValidationError]]:
+) -> Response[Union[QueryResult, ValidationError]]:
     """Audit Incidents Query
 
      query by logQL
 
     Args:
         label (str):
-        user_id (Union[Unset, None, str]): query events related to a specific user id
-        data_id (Union[Unset, None, str]): query events related to a specific data id
+        user_id (Union[Unset, None, str]): query events related to a specific user
+        resource (Union[Unset, None, Resource]): An enumeration.
+        dataset_id (Union[Unset, None, str]): query events related to a specific dataset
+        scn_id (Union[Unset, None, str]): query events related to a specific scn
+        data_mode_id (Union[Unset, None, str]): query events related to a specific data model
         start (Union[None, Unset, float, int]): starting timestamp of the query range
         end (Union[None, Unset, float, int]): ending timestamp of the query range
         limit (Union[Unset, None, int]): query events number limit
@@ -244,14 +269,17 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPExceptionObj, QueryResult, ValidationError]]
+        Response[Union[QueryResult, ValidationError]]
     """
 
     kwargs = _get_kwargs(
         client=client,
         label=label,
         user_id=user_id,
-        data_id=data_id,
+        resource=resource,
+        dataset_id=dataset_id,
+        scn_id=scn_id,
+        data_mode_id=data_mode_id,
         start=start,
         end=end,
         limit=limit,
@@ -270,21 +298,27 @@ async def asyncio(
     client: AuthenticatedClient,
     label: str,
     user_id: Union[Unset, None, str] = UNSET,
-    data_id: Union[Unset, None, str] = UNSET,
+    resource: Union[Unset, None, Resource] = UNSET,
+    dataset_id: Union[Unset, None, str] = UNSET,
+    scn_id: Union[Unset, None, str] = UNSET,
+    data_mode_id: Union[Unset, None, str] = UNSET,
     start: Union[None, Unset, float, int] = UNSET,
     end: Union[None, Unset, float, int] = UNSET,
     limit: Union[Unset, None, int] = UNSET,
     step: Union[Unset, None, str] = UNSET,
     direction: Union[Unset, None, str] = UNSET,
-) -> Optional[Union[HTTPExceptionObj, QueryResult, ValidationError]]:
+) -> Optional[Union[QueryResult, ValidationError]]:
     """Audit Incidents Query
 
      query by logQL
 
     Args:
         label (str):
-        user_id (Union[Unset, None, str]): query events related to a specific user id
-        data_id (Union[Unset, None, str]): query events related to a specific data id
+        user_id (Union[Unset, None, str]): query events related to a specific user
+        resource (Union[Unset, None, Resource]): An enumeration.
+        dataset_id (Union[Unset, None, str]): query events related to a specific dataset
+        scn_id (Union[Unset, None, str]): query events related to a specific scn
+        data_mode_id (Union[Unset, None, str]): query events related to a specific data model
         start (Union[None, Unset, float, int]): starting timestamp of the query range
         end (Union[None, Unset, float, int]): ending timestamp of the query range
         limit (Union[Unset, None, int]): query events number limit
@@ -296,7 +330,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPExceptionObj, QueryResult, ValidationError]
+        Union[QueryResult, ValidationError]
     """
 
     return (
@@ -304,7 +338,10 @@ async def asyncio(
             client=client,
             label=label,
             user_id=user_id,
-            data_id=data_id,
+            resource=resource,
+            dataset_id=dataset_id,
+            scn_id=scn_id,
+            data_mode_id=data_mode_id,
             start=start,
             end=end,
             limit=limit,

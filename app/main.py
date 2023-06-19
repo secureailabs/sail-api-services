@@ -178,6 +178,16 @@ async def get_body(request: Request) -> bytes:
     return body
 
 
+def remove_sensitive_info(request_body: dict):
+    # recursively remove sensitive data from the request body
+    for key in request_body.keys():
+        if "password" in key:
+            request_body[key] = "****"
+        elif isinstance(request_body[key], dict):
+            request_body[key] = remove_sensitive_info(request_body[key])
+    return request_body
+
+
 @server.middleware("http")
 async def add_audit_log(request: Request, call_next: Callable):
     """
@@ -195,15 +205,13 @@ async def add_audit_log(request: Request, call_next: Callable):
     if "Content-Type" in request.headers:
         if request.headers.get("Content-Type") == "application/json":
             request_body = json.loads(request_body)
-            if "password" in request_body:
-                request_body["password"] = "****"
-            if "admin_password" in request_body:
-                request_body["password"] = "****"
-            request_body = json.dumps(request_body)
-        if request.headers.get("Content-Type") == "application/x-www-form-urlencoded":
+            # recursively remove password from the request body
+            request_body_json = remove_sensitive_info(request_body)
+            request_body = json.dumps(request_body_json)
+        elif request.headers.get("Content-Type") == "application/x-www-form-urlencoded":
             request_body = parse_qs(request_body.decode("utf-8"))
             if "password" in request_body:
-                request_body["password"] = "****"
+                request_body["password"][0] = "****"
             request_body = urlencode(request_body, doseq=True)
 
     response: Response = await call_next(request)
@@ -224,6 +232,6 @@ async def add_audit_log(request: Request, call_next: Callable):
         "response": f"{response.status_code}",
     }
 
-    add_log_message(LogLevel.INFO, Resource.USER_ACTIVITY, message)
+    add_log_message(LogLevel.INFO, Resource.USER_ACTIVITY, json.dumps(message, separators=(",", ":")))
 
     return response

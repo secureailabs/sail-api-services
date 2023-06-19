@@ -68,6 +68,10 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: TokenData = Depends(get_current_user)):
+        # allow SAIL_ADMIN to do anything
+        if UserRole.SAIL_ADMIN in user.roles:
+            return None
+
         if user.roles:
             for role in user.roles:
                 if role in self.allowed_roles:
@@ -241,7 +245,7 @@ async def get_current_user_info(
     path="/unlock-account/{user_id}",
     description="Unlock the user account",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.SAIL_ADMIN]))],
+    dependencies=[Depends(RoleChecker(allowed_roles=[]))],
     operation_id="unlock_user_account",
 )
 async def unlock_user_account(

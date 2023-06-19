@@ -192,7 +192,7 @@ async def update_dataset(
 @router.delete(
     path="/datasets/{dataset_id}",
     description="Disable the dataset",
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ADMIN]))],
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ORGANIZATION_ADMIN]))],
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="soft_delete_dataset",
 )

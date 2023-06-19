@@ -12,7 +12,7 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
-from typing import Dict, Union
+from typing import Dict
 
 from app.data import operations as data_service
 from app.models.common import BasicObjectInfo, PyObjectId
@@ -31,57 +31,51 @@ DB_COLLECTION_DATASETS = "datasets"
 DB_COLLECTION_SECURE_COMPUTATION_NODE = "secure-computation-node"
 
 
-def get_basic_object(id: PyObjectId) -> Union[BasicObjectInfo, None]:
+async def get_basic_object(id: PyObjectId, collection_name: str) -> BasicObjectInfo:
     if id in GLOBAL_CACHE:
         return GLOBAL_CACHE[id]
     else:
-        return None
-
-
-async def get_basic_user(id: PyObjectId) -> BasicObjectInfo:
-    basic_object = get_basic_object(id)
-    if basic_object is None:
         # Get the user from the database
-        object = await data_service.find_one(DB_COLLECTION_ORGANIZATIONS, {"_id": str(id)})
+        object = await data_service.find_one(collection_name, {"_id": str(id)})
         if not object:
-            raise Exception("Organization not found")
+            raise Exception(f"{id} in {collection_name} not found")
         basic_object = BasicObjectInfo(id=id, name=object["name"])
         # Add the user to the cache
         GLOBAL_CACHE[id] = basic_object
     return basic_object
 
 
-def get_basic_data_model(id: PyObjectId) -> BasicObjectInfo:
-    pass
+async def get_basic_user(id: PyObjectId) -> BasicObjectInfo:
+    return await get_basic_object(id, DB_COLLECTION_USERS)
 
 
-def get_basic_data_model_dataframe(id: PyObjectId) -> BasicObjectInfo:
-    pass
+async def get_basic_data_model(id: PyObjectId) -> BasicObjectInfo:
+    return await get_basic_object(id, DB_COLLECTION_DATA_MODEL)
 
 
-def get_basic_data_model_series(id: PyObjectId) -> BasicObjectInfo:
-    pass
+async def get_basic_data_model_dataframe(id: PyObjectId) -> BasicObjectInfo:
+    return await get_basic_object(id, DB_COLLECTION_DATA_MODEL_DATAFRAME)
 
 
-def get_basic_dataset(id: PyObjectId) -> BasicObjectInfo:
-    pass
+async def get_basic_data_model_series(id: PyObjectId) -> BasicObjectInfo:
+    return await get_basic_object(id, DB_COLLECTION_DATA_MODEL_SERIES)
 
 
-def get_basic_dataset_version(id: PyObjectId) -> BasicObjectInfo:
-    pass
+async def get_basic_dataset(id: PyObjectId) -> BasicObjectInfo:
+    return await get_basic_object(id, DB_COLLECTION_DATASETS)
 
 
-def get_basic_data_federation(id: PyObjectId) -> BasicObjectInfo:
-    pass
+async def get_basic_dataset_version(id: PyObjectId) -> BasicObjectInfo:
+    return await get_basic_object(id, DB_COLLECTION_DATASET_VERSIONS)
 
 
-def get_basic_secure_computation_node(id: PyObjectId) -> BasicObjectInfo:
-    pass
+async def get_basic_secure_computation_node(id: PyObjectId) -> BasicObjectInfo:
+    return await get_basic_object(id, DB_COLLECTION_SECURE_COMPUTATION_NODE)
 
 
-def get_basic_orgnization(id: PyObjectId) -> BasicObjectInfo:
-    pass
+async def get_basic_orgnization(id: PyObjectId) -> BasicObjectInfo:
+    return await get_basic_object(id, DB_COLLECTION_ORGANIZATIONS)
 
 
-def get_basic_data_federation(id: PyObjectId) -> BasicObjectInfo:
-    pass
+async def get_basic_data_federation(id: PyObjectId) -> BasicObjectInfo:
+    return await get_basic_object(id, DB_COLLECTION_DATA_FEDERATIONS)

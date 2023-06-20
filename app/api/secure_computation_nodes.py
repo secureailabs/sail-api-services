@@ -25,7 +25,7 @@ from sail_dns_management_client.models import DomainData
 import app.utils.azure as azure
 from app.api.authentication import RoleChecker, get_current_user
 from app.api.data_federations import get_data_federation, get_existing_dataset_key
-from app.api.dataset_versions import get_all_dataset_versions, get_dataset_version
+from app.api.dataset_versions import DatasetVersion
 from app.data import operations as data_service
 from app.models.accounts import UserRole
 from app.models.authentication import TokenData
@@ -44,6 +44,7 @@ from app.models.secure_computation_nodes import (
     SecureComputationNodeState,
     UpdateSecureComputationNode_In,
 )
+from app.utils import cache
 from app.utils.background_couroutines import add_async_task
 from app.utils.secrets import get_secret
 
@@ -102,22 +103,23 @@ async def register_secure_computation_node(
     for dataset in datasets:
         # Get the dataset versions
         dataset_id = dataset.id
-        response = await get_all_dataset_versions(dataset_id=dataset_id, current_user=current_user)
+        response = await DatasetVersion.read(dataset_id=dataset_id)
 
         # Add all the dataset versions
-        for dataset_version in response.dataset_versions:
+        for dataset_version in response:
             # check if the dataset version is uploaded and active
             if dataset_version.state is not DatasetVersionState.ACTIVE:
+                organization_info = await cache.get_basic_orgnization(id=dataset_version.organization_id)
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Dataset version {dataset_version.name} from {dataset.name} must be uploaded and active. It is owned by {dataset_version.organization.name}",
+                    detail=f"Dataset version {dataset_version.name} from {dataset.name} must be uploaded and active. It is owned by {organization_info.name}.",
                 )
 
             dataset_info.append(
                 DatasetInformation(
                     id=dataset_id,
                     version_id=dataset_version.id,
-                    data_owner_id=dataset_version.organization.id,
+                    data_owner_id=dataset_version.organization_id,
                 )
             )
 
@@ -134,9 +136,7 @@ async def register_secure_computation_node(
     dataset_with_keys: List[DatasetInformationWithKey] = []
     for dataset in dataset_info:
         # Check if dataset version exist
-        dataset_version_db = await get_dataset_version(dataset.version_id, current_user)
-        if not dataset_version_db:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset Version not found")
+        await DatasetVersion.read(dataset_version_id=dataset.version_id)
 
         # Get the encryption key of the dataset
         dataset_key = await get_existing_dataset_key(
@@ -207,13 +207,19 @@ async def get_all_secure_computation_nodes(
                 dataset_basic_info = [dataset for dataset in data_federation.datasets if dataset.id == dataset.id][0]
 
                 # Get the basic information of the data version
-                dataset_version_basic_info = await get_dataset_version(dataset.version_id, current_user)
+                dataset_version_basic_info = await DatasetVersion.read(dataset_version_id=dataset.version_id)
+                dataset_version_basic_info = dataset_version_basic_info[0]
+
+                # Get the information about the data owner organization
+                data_owner_organization = await cache.get_basic_orgnization(
+                    id=dataset_version_basic_info.organization_id
+                )
 
                 dataset_info.append(
                     DatasetBasicInformation(
                         dataset=BasicObjectInfo(id=dataset_basic_info.id, name=dataset_basic_info.name),
                         version=BasicObjectInfo(id=dataset_version_basic_info.id, name=dataset_version_basic_info.name),
-                        data_owner=dataset_version_basic_info.organization,
+                        data_owner=data_owner_organization,
                     )
                 )
 
@@ -275,13 +281,17 @@ async def get_secure_computation_node(
         dataset_basic_info = [dataset for dataset in data_federation.datasets if dataset.id == dataset.id][0]
 
         # Get the basic information of the data version
-        dataset_version_basic_info = await get_dataset_version(dataset.version_id, current_user)
+        dataset_version_basic_info = await DatasetVersion.read(dataset_version_id=dataset.version_id)
+        dataset_version_basic_info = dataset_version_basic_info[0]
+
+        # Get the information about the data owner organization
+        data_owner_organization = await cache.get_basic_orgnization(id=dataset_version_basic_info.organization_id)
 
         dataset_info.append(
             DatasetBasicInformation(
                 dataset=BasicObjectInfo(id=dataset_basic_info.id, name=dataset_basic_info.name),
                 version=BasicObjectInfo(id=dataset_version_basic_info.id, name=dataset_version_basic_info.name),
-                data_owner=dataset_version_basic_info.organization,
+                data_owner=data_owner_organization,
             )
         )
 

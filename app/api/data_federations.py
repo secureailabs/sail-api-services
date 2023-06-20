@@ -12,8 +12,9 @@
 #     be disclosed to others for any purpose without
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
+
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Request, Response, status
 from fastapi.encoders import jsonable_encoder
@@ -22,7 +23,7 @@ from pydantic import EmailStr
 import app.utils.azure as azure
 from app.api.accounts import get_all_admins, get_organization, get_user
 from app.api.authentication import RoleChecker, get_current_user
-from app.api.datasets import get_dataset, get_datset_encryption_key
+from app.api.datasets import Datasets, get_datset_encryption_key
 from app.api.emails import send_email
 from app.data import operations as data_service
 from app.models.accounts import GetUsers_Out, UserRole
@@ -618,7 +619,7 @@ async def add_data_model(
     path="/data-federations/{data_federation_id}",
     description="Disable the data federation",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ORGANIZATION_ADMIN, UserRole.PAG_ADMIN]))],
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
     operation_id="soft_delete_data_federation",
 )
 async def soft_delete_data_federation(
@@ -882,7 +883,7 @@ async def send_invite_email(subject: str, email_body: str, emails: List[EmailStr
     path="/data-federations/{data_federation_id}/datasets/{dataset_id}",
     description="Add a dataset to a data federation",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.PAG_ADMIN]))],
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_SUBMITTER]))],
     operation_id="add_dataset",
 )
 async def add_dataset(
@@ -918,11 +919,7 @@ async def add_dataset(
     data_federation_db = DataFederation_Db(**data_federation_db)
 
     # Check if the dataset exists
-    dataset_info = await get_dataset(dataset_id=dataset_id, current_user=current_user)
-
-    # Dataset must belong to current organization
-    if dataset_info.organization.id != current_user.organization_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorised")
+    await Datasets.read(dataset_id=dataset_id, organization_id=current_user.organization_id)
 
     # Add the dataset to the data federation
     if dataset_id not in data_federation_db.datasets_id:
@@ -1047,8 +1044,8 @@ async def get_dataset_key(
     if data_researchers_info:
         create_if_not_found = False
         # Get the data submitter information from the dataset
-        dataset_db = await get_dataset(dataset_id=dataset_id, current_user=current_user)
-        data_submitter_id = dataset_db.organization.id
+        dataset_db = await Datasets.read(dataset_id=dataset_id)
+        data_submitter_id = dataset_db[0].organization_id
 
     # At this point the data_submitter_id should be set with the correct organization id
     data_submitters_info = [

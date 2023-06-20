@@ -17,8 +17,9 @@ from typing import List, Optional
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 
-from app.api.authentication import get_current_user
+from app.api.authentication import RoleChecker, get_current_user
 from app.data import operations as data_service
+from app.models.accounts import UserRole
 from app.models.authentication import TokenData
 from app.models.common import PyObjectId
 from app.models.data_models import (
@@ -81,8 +82,8 @@ class DataModel:
         if organization_id:
             query["organization_id"] = organization_id
 
-        # if not query:
-        #     raise Exception("Invalid query")
+        # Don't return deleted data models
+        query["state"] = {"$ne": DataModelState.DELETED.value}
 
         response = await data_service.find_by_query(
             collection=DataModel.DB_COLLECTION_DATA_MODEL,
@@ -104,8 +105,8 @@ class DataModel:
     async def update(
         data_model_id: PyObjectId,
         organization_id: PyObjectId,
-        data_model_dataframe_to_add: Optional[List[PyObjectId]] = None,
-        data_model_dataframe_to_remove: Optional[List[PyObjectId]] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
         state: Optional[DataModelState] = None,
     ):
         """
@@ -122,16 +123,18 @@ class DataModel:
         update_request = {}
         if state:
             update_request["$set"] = {"state": state.value}
-
-        if data_model_dataframe_to_add:
-            update_request["$push"] = {"data_model_dataframes": {"$each": list(map(str, data_model_dataframe_to_add))}}
-
-        if data_model_dataframe_to_remove:
-            update_request["$pull"] = {"data_model_dataframes": {"$in": list(map(str, data_model_dataframe_to_remove))}}
+        if name:
+            update_request["$set"] = {"name": name}
+        if description:
+            update_request["$set"] = {"description": description}
 
         return await data_service.update_many(
             collection=DataModel.DB_COLLECTION_DATA_MODEL,
-            query={"_id": str(data_model_id), "organization_id": str(organization_id)},
+            query={
+                "_id": str(data_model_id),
+                "organization_id": str(organization_id),
+                "state": {"$ne": DataModelState.DELETED.value},
+            },
             data=update_request,
         )
 
@@ -144,6 +147,7 @@ class DataModel:
     response_model_by_alias=False,
     response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
     operation_id="register_data_model",
 )
 async def register_data_model(
@@ -166,7 +170,6 @@ async def register_data_model(
         name=data_model_req.name,
         description=data_model_req.description,
         organization_id=current_user.organization_id,
-        data_model_dataframes=[],
         state=DataModelState.DRAFT,
     )
 
@@ -245,6 +248,7 @@ async def get_all_data_model_info(
     path="/data-models/{data_model_id}",
     description="Update data model to add or remove data frames",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
     operation_id="update_data_model",
 )
 async def update_data_model(
@@ -268,8 +272,6 @@ async def update_data_model(
     await DataModel.update(
         data_model_id=data_model_id,
         organization_id=current_user.organization_id,
-        data_model_dataframe_to_add=data_model_req.data_model_dataframe_to_add,
-        data_model_dataframe_to_remove=data_model_req.data_model_dataframe_to_remove,
         state=data_model_req.state,
     )
 
@@ -280,6 +282,7 @@ async def update_data_model(
     path="/data-models/{data_model_id}",
     description="Soft delete data model",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
     operation_id="delete_data_model",
 )
 async def delete_data_model(

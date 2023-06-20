@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Type, TypeVar, Union
 
 import attr
 
@@ -12,49 +12,39 @@ T = TypeVar("T", bound="UpdateDataModelIn")
 class UpdateDataModelIn:
     """
     Attributes:
-        data_model_dataframe_to_add (Union[Unset, List[str]]): The data_model_dataframes to add to the data model
-        data_model_dataframe_to_remove (Union[Unset, List[str]]): The data_model_dataframes to remove from the data
-            model
         state (Union[Unset, DataModelState]): An enumeration.
+        name (Union[Unset, str]): The name of the data model
+        description (Union[Unset, str]): The description of the data model
     """
 
-    data_model_dataframe_to_add: Union[Unset, List[str]] = UNSET
-    data_model_dataframe_to_remove: Union[Unset, List[str]] = UNSET
     state: Union[Unset, DataModelState] = UNSET
+    name: Union[Unset, str] = UNSET
+    description: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        data_model_dataframe_to_add: Union[Unset, List[str]] = UNSET
-        if not isinstance(self.data_model_dataframe_to_add, Unset):
-            data_model_dataframe_to_add = self.data_model_dataframe_to_add
-
-        data_model_dataframe_to_remove: Union[Unset, List[str]] = UNSET
-        if not isinstance(self.data_model_dataframe_to_remove, Unset):
-            data_model_dataframe_to_remove = self.data_model_dataframe_to_remove
-
         state: Union[Unset, str] = UNSET
         if not isinstance(self.state, Unset):
             state = self.state.value
 
+        name = self.name
+        description = self.description
+
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
-        if data_model_dataframe_to_add is not UNSET:
-            field_dict["data_model_dataframe_to_add"] = data_model_dataframe_to_add
-        if data_model_dataframe_to_remove is not UNSET:
-            field_dict["data_model_dataframe_to_remove"] = data_model_dataframe_to_remove
         if state is not UNSET:
             field_dict["state"] = state
+        if name is not UNSET:
+            field_dict["name"] = name
+        if description is not UNSET:
+            field_dict["description"] = description
 
         return field_dict
 
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        data_model_dataframe_to_add = cast(List[str], d.pop("data_model_dataframe_to_add", UNSET))
-
-        data_model_dataframe_to_remove = cast(List[str], d.pop("data_model_dataframe_to_remove", UNSET))
-
         _state = d.pop("state", UNSET)
         state: Union[Unset, DataModelState]
         if isinstance(_state, Unset):
@@ -62,10 +52,14 @@ class UpdateDataModelIn:
         else:
             state = DataModelState(_state)
 
+        name = d.pop("name", UNSET)
+
+        description = d.pop("description", UNSET)
+
         update_data_model_in = cls(
-            data_model_dataframe_to_add=data_model_dataframe_to_add,
-            data_model_dataframe_to_remove=data_model_dataframe_to_remove,
             state=state,
+            name=name,
+            description=description,
         )
 
         update_data_model_in.additional_properties = d

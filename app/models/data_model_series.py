@@ -14,17 +14,24 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import Field
 
-from app.models.common import BasicObjectInfo, PyObjectId, SailBaseModel
+from app.models.common import PyObjectId, SailBaseModel
+
+
+class SeriesDataModelType(str, Enum):
+    SeriesDataModelCategorical = "SeriesDataModelCategorical"
+    SeriesDataModelDate = "SeriesDataModelDate"
+    SeriesDataModelDateTime = "SeriesDataModelDateTime"
+    SeriesDataModelInterval = "SeriesDataModelInterval"
+    SeriesDataModelUnique = "SeriesDataModelUnique"
 
 
 class SeriesDataModelSchema(SailBaseModel):
-    type: str
+    type: SeriesDataModelType = Field()
     series_name: str
-    series_data_model_id: str
     list_value: Optional[List[str]]
     unit: Optional[str]
     min: Optional[float]
@@ -41,6 +48,7 @@ class DataModelSeries_Base(SailBaseModel):
     name: str = Field()
     description: str = Field()
     series_schema: SeriesDataModelSchema = Field()
+    data_model_dataframe_id: PyObjectId = Field()
 
 
 class DataModelSeries_Db(DataModelSeries_Base):
@@ -71,4 +79,6 @@ class RegisterDataModelSeries_Out(SailBaseModel):
 
 class UpdateDataModelSeries_In(SailBaseModel):
     series_schema: Optional[SeriesDataModelSchema] = Field(default=None)
+    name: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)
     state: Optional[DataModelSeriesState] = Field(default=None)

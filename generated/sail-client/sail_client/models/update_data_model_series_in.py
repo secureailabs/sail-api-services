@@ -17,10 +17,14 @@ class UpdateDataModelSeriesIn:
     """
     Attributes:
         series_schema (Union[Unset, SeriesDataModelSchema]):
+        name (Union[Unset, str]):
+        description (Union[Unset, str]):
         state (Union[Unset, DataModelSeriesState]): An enumeration.
     """
 
     series_schema: Union[Unset, "SeriesDataModelSchema"] = UNSET
+    name: Union[Unset, str] = UNSET
+    description: Union[Unset, str] = UNSET
     state: Union[Unset, DataModelSeriesState] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
@@ -29,6 +33,8 @@ class UpdateDataModelSeriesIn:
         if not isinstance(self.series_schema, Unset):
             series_schema = self.series_schema.to_dict()
 
+        name = self.name
+        description = self.description
         state: Union[Unset, str] = UNSET
         if not isinstance(self.state, Unset):
             state = self.state.value
@@ -38,6 +44,10 @@ class UpdateDataModelSeriesIn:
         field_dict.update({})
         if series_schema is not UNSET:
             field_dict["series_schema"] = series_schema
+        if name is not UNSET:
+            field_dict["name"] = name
+        if description is not UNSET:
+            field_dict["description"] = description
         if state is not UNSET:
             field_dict["state"] = state
 
@@ -55,6 +65,10 @@ class UpdateDataModelSeriesIn:
         else:
             series_schema = SeriesDataModelSchema.from_dict(_series_schema)
 
+        name = d.pop("name", UNSET)
+
+        description = d.pop("description", UNSET)
+
         _state = d.pop("state", UNSET)
         state: Union[Unset, DataModelSeriesState]
         if isinstance(_state, Unset):
@@ -64,6 +78,8 @@ class UpdateDataModelSeriesIn:
 
         update_data_model_series_in = cls(
             series_schema=series_schema,
+            name=name,
+            description=description,
             state=state,
         )
 

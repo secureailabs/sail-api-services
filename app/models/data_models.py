@@ -16,9 +16,9 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import Field
+from pydantic import Field, StrictStr
 
-from app.models.common import BasicObjectInfo, PyObjectId, SailBaseModel
+from app.models.common import PyObjectId, SailBaseModel
 
 
 class DataModelState(str, Enum):
@@ -36,7 +36,6 @@ class DataModel_Db(DataModel_Base):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field(...)
-    data_model_dataframes: List[PyObjectId] = Field(...)
     state: DataModelState = Field(...)
 
 
@@ -44,7 +43,6 @@ class GetDataModel_Out(DataModel_Base):
     id: PyObjectId = Field(alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field(...)
-    data_model_dataframes: List[PyObjectId] = Field(...)
     state: DataModelState = Field(...)
 
 
@@ -61,10 +59,6 @@ class RegisterDataModel_Out(SailBaseModel):
 
 
 class UpdateDataModel_In(SailBaseModel):
-    data_model_dataframe_to_add: Optional[List[PyObjectId]] = Field(
-        default=None, description="The data_model_dataframes to add to the data model"
-    )
-    data_model_dataframe_to_remove: Optional[List[PyObjectId]] = Field(
-        default=None, description="The data_model_dataframes to remove from the data model"
-    )
     state: Optional[DataModelState] = Field(default=None, description="The state of the data model")
+    name: Optional[StrictStr] = Field(default=None, description="The name of the data model")
+    description: Optional[StrictStr] = Field(default=None, description="The description of the data model")

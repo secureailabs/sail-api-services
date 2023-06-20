@@ -63,6 +63,7 @@ from .resource import Resource
 from .secure_computation_node_size import SecureComputationNodeSize
 from .secure_computation_node_state import SecureComputationNodeState
 from .series_data_model_schema import SeriesDataModelSchema
+from .series_data_model_type import SeriesDataModelType
 from .update_data_federation_in import UpdateDataFederationIn
 from .update_data_model_dataframe_in import UpdateDataModelDataframeIn
 from .update_data_model_in import UpdateDataModelIn
@@ -141,6 +142,7 @@ __all__ = (
     "SecureComputationNodeSize",
     "SecureComputationNodeState",
     "SeriesDataModelSchema",
+    "SeriesDataModelType",
     "UpdateDataFederationIn",
     "UpdateDataModelDataframeIn",
     "UpdateDataModelIn",

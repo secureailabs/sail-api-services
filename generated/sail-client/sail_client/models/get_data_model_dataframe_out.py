@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, List, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Type, TypeVar, Union
 
 import attr
 from dateutil.parser import isoparse
@@ -16,18 +16,18 @@ class GetDataModelDataframeOut:
     Attributes:
         name (str):
         description (str):
+        data_model_id (str):
         id (str):
         organization_id (str):
-        data_model_series (List[str]):
         state (DataModelDataframeState): An enumeration.
         creation_time (Union[Unset, datetime.datetime]):
     """
 
     name: str
     description: str
+    data_model_id: str
     id: str
     organization_id: str
-    data_model_series: List[str]
     state: DataModelDataframeState
     creation_time: Union[Unset, datetime.datetime] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
@@ -35,10 +35,9 @@ class GetDataModelDataframeOut:
     def to_dict(self) -> Dict[str, Any]:
         name = self.name
         description = self.description
+        data_model_id = self.data_model_id
         id = self.id
         organization_id = self.organization_id
-        data_model_series = self.data_model_series
-
         state = self.state.value
 
         creation_time: Union[Unset, str] = UNSET
@@ -51,9 +50,9 @@ class GetDataModelDataframeOut:
             {
                 "name": name,
                 "description": description,
+                "data_model_id": data_model_id,
                 "id": id,
                 "organization_id": organization_id,
-                "data_model_series": data_model_series,
                 "state": state,
             }
         )
@@ -69,11 +68,11 @@ class GetDataModelDataframeOut:
 
         description = d.pop("description")
 
+        data_model_id = d.pop("data_model_id")
+
         id = d.pop("id")
 
         organization_id = d.pop("organization_id")
-
-        data_model_series = cast(List[str], d.pop("data_model_series"))
 
         state = DataModelDataframeState(d.pop("state"))
 
@@ -87,9 +86,9 @@ class GetDataModelDataframeOut:
         get_data_model_dataframe_out = cls(
             name=name,
             description=description,
+            data_model_id=data_model_id,
             id=id,
             organization_id=organization_id,
-            data_model_series=data_model_series,
             state=state,
             creation_time=creation_time,
         )

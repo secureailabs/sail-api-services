@@ -52,6 +52,7 @@ router = APIRouter()
     response_model=RegisterDatasetVersion_Out,
     response_model_by_alias=False,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_SUBMITTER]))],
     operation_id="register_dataset_version",
 )
 async def register_dataset_version(
@@ -71,7 +72,7 @@ async def register_dataset_version(
     # If the dataset version was already registered, return the dataset version id
     if dataset_version_db:
         response.status_code = status.HTTP_200_OK
-        return RegisterDatasetVersion_Out(**dataset_version_db)  # type: ignore
+        return RegisterDatasetVersion_Out(**dataset_version_db)
 
     # Dataset organization and dataset-versions organization should be same
     dataset_db = await get_dataset(dataset_version_req.dataset_id, current_user)
@@ -151,7 +152,7 @@ async def get_dataset_version(
     dataset_version = await data_service.find_one(DB_COLLECTION_DATASET_VERSIONS, {"_id": str(dataset_version_id)})
     if not dataset_version:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset version not found")
-    dataset_version = DatasetVersion_Db(**dataset_version)  # type: ignore
+    dataset_version = DatasetVersion_Db(**dataset_version)
 
     # Add the organization information to the dataset version
     organization = await cache.get_basic_orgnization(dataset_version.organization_id)
@@ -169,6 +170,7 @@ async def get_dataset_version(
     response_model=GetDatasetVersionConnectionString_Out,
     status_code=status.HTTP_200_OK,
     response_model_by_alias=False,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_SUBMITTER]))],
     operation_id="get_dataset_version_connection_string",
 )
 async def get_dataset_version_connection_string(
@@ -181,7 +183,7 @@ async def get_dataset_version_connection_string(
     )
     if not dataset_version:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset version not found")
-    dataset_version = DatasetVersion_Db(**dataset_version)  # type: ignore
+    dataset_version = DatasetVersion_Db(**dataset_version)
 
     # Send the connection string only if the dataset version is not uploaded to prevent overwriting
     if dataset_version.state != DatasetVersionState.ENCRYPTING:
@@ -216,6 +218,7 @@ async def get_dataset_version_connection_string(
     path="/dataset-versions/{dataset_version_id}",
     description="Update dataset information",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_SUBMITTER]))],
     operation_id="update_dataset_version",
 )
 async def update_dataset_version(
@@ -246,8 +249,7 @@ async def update_dataset_version(
     if not dataset_version_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
 
-    dataset_version_db = DatasetVersion_Db(**dataset_version_db)  # type: ignore
-
+    dataset_version_db = DatasetVersion_Db(**dataset_version_db)
     if updated_dataset_version_info.description:
         dataset_version_db.description = updated_dataset_version_info.description
 
@@ -269,7 +271,7 @@ async def update_dataset_version(
 @router.delete(
     path="/dataset-versions/{dataset_version_id}",
     description="Disable a dataset version",
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ORGANIZATION_ADMIN]))],
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_SUBMITTER]))],
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="soft_delete_dataset_version",
 )
@@ -281,7 +283,7 @@ async def soft_delete_dataset_version(
     dataset_version_db = await data_service.find_one(DB_COLLECTION_DATASET_VERSIONS, {"_id": str(dataset_version_id)})
     if not dataset_version_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found")
-    dataset_version_db = DatasetVersion_Db(**dataset_version_db)  # type: ignore
+    dataset_version_db = DatasetVersion_Db(**dataset_version_db)
 
     if dataset_version_db.organization_id != current_user.organization_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")

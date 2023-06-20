@@ -134,11 +134,12 @@ async def get_all_data_federations(
         query = {}
     elif (not data_submitter_id) and (not research_organizations_id) and (not dataset_id):
         query = {
+            "state": DataFederationState.ACTIVE.value,
             "$or": [
                 {"organization_id": str(current_user.organization_id)},
                 {"data_submitters.organization_id": str(current_user.organization_id)},
                 {"research_organizations_id": {"$all": [str(current_user.organization_id)]}},
-            ]
+            ],
         }
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")

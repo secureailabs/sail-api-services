@@ -11,15 +11,18 @@ class RegisterDataModelDataframeIn:
     Attributes:
         name (str):
         description (str):
+        data_model_id (str):
     """
 
     name: str
     description: str
+    data_model_id: str
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         name = self.name
         description = self.description
+        data_model_id = self.data_model_id
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -27,6 +30,7 @@ class RegisterDataModelDataframeIn:
             {
                 "name": name,
                 "description": description,
+                "data_model_id": data_model_id,
             }
         )
 
@@ -39,9 +43,12 @@ class RegisterDataModelDataframeIn:
 
         description = d.pop("description")
 
+        data_model_id = d.pop("data_model_id")
+
         register_data_model_dataframe_in = cls(
             name=name,
             description=description,
+            data_model_id=data_model_id,
         )
 
         register_data_model_dataframe_in.additional_properties = d

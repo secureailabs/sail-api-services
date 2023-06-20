@@ -16,17 +16,21 @@ class RegisterDataModelSeriesIn:
         name (str):
         description (str):
         series_schema (SeriesDataModelSchema):
+        data_model_dataframe_id (str):
     """
 
     name: str
     description: str
     series_schema: "SeriesDataModelSchema"
+    data_model_dataframe_id: str
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         name = self.name
         description = self.description
         series_schema = self.series_schema.to_dict()
+
+        data_model_dataframe_id = self.data_model_dataframe_id
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -35,6 +39,7 @@ class RegisterDataModelSeriesIn:
                 "name": name,
                 "description": description,
                 "series_schema": series_schema,
+                "data_model_dataframe_id": data_model_dataframe_id,
             }
         )
 
@@ -51,10 +56,13 @@ class RegisterDataModelSeriesIn:
 
         series_schema = SeriesDataModelSchema.from_dict(d.pop("series_schema"))
 
+        data_model_dataframe_id = d.pop("data_model_dataframe_id")
+
         register_data_model_series_in = cls(
             name=name,
             description=description,
             series_schema=series_schema,
+            data_model_dataframe_id=data_model_dataframe_id,
         )
 
         register_data_model_series_in.additional_properties = d

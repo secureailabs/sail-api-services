@@ -18,8 +18,9 @@ from typing import List, Optional
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Response, status
 from fastapi.encoders import jsonable_encoder
 
-from app.api.authentication import get_current_user
+from app.api.authentication import RoleChecker, get_current_user
 from app.data import operations as data_service
+from app.models.accounts import UserRole
 from app.models.authentication import TokenData
 from app.models.common import PyObjectId
 from app.models.data_model_series import (
@@ -29,6 +30,7 @@ from app.models.data_model_series import (
     GetMultipleDataModelSeries_Out,
     RegisterDataModelSeries_In,
     RegisterDataModelSeries_Out,
+    SeriesDataModelSchema,
     UpdateDataModelSeries_In,
 )
 
@@ -109,8 +111,10 @@ class DataModelSeries:
     async def update(
         data_model_series_id: PyObjectId,
         organization_id: PyObjectId,
-        data_model_series_schema: Optional[Dict] = None,
+        data_model_series_schema: Optional[SeriesDataModelSchema] = None,
         state: Optional[DataModelSeriesState] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ):
         """
         Update a data model series
@@ -128,15 +132,30 @@ class DataModelSeries:
             update_request["$set"] = {"state": state.value}
         if data_model_series_schema:
             update_request["$set"] = {"series_schema": data_model_series_schema}
+        if name:
+            update_request["$set"] = {"name": name}
+        if description:
+            update_request["$set"] = {"description": description}
 
         if not update_request:
             raise Exception("Invalid update request")
 
-        return await data_service.update_many(
+        update_result = await data_service.update_many(
             collection=DataModelSeries.DB_COLLECTION_DATA_MODEL_SERIES,
-            query={"_id": str(data_model_series_id), "organization_id": str(organization_id)},
+            query={
+                "_id": str(data_model_series_id),
+                "state": {"$ne": DataModelSeriesState.DELETED.value},
+            },
             data=jsonable_encoder(update_request),
         )
+
+        if update_result.modified_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Data model series not found",
+            )
+
+        return update_result
 
 
 @router.post(
@@ -147,6 +166,7 @@ class DataModelSeries:
     response_model_by_alias=False,
     response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
     operation_id="register_data_model_series",
 )
 async def register_data_model_series(
@@ -170,6 +190,7 @@ async def register_data_model_series(
         name=data_model_series_req.name,
         description=data_model_series_req.description,
         organization_id=current_user.organization_id,
+        data_model_dataframe_id=data_model_series_req.data_model_dataframe_id,
         series_schema=data_model_series_req.series_schema,
         state=DataModelSeriesState.ACTIVE,
     )
@@ -222,6 +243,7 @@ async def get_data_model_series_info(
     operation_id="get_all_data_model_series_info",
 )
 async def get_all_data_model_series_info(
+    data_model_dataframe_id: Optional[PyObjectId] = Query(default=None, description="Data model dataframe Id"),
     current_user: TokenData = Depends(get_current_user),
 ) -> GetMultipleDataModelSeries_Out:
     """
@@ -235,8 +257,12 @@ async def get_all_data_model_series_info(
     :return: Data model series information and list of SCNs
     :rtype: GetDataModelSeries_Out
     """
-    # Get the data model series
-    data_model_series_info = await DataModelSeries.read(organization_id=current_user.organization_id)
+    if data_model_dataframe_id:
+        # Get the data model series
+        data_model_series_info = await DataModelSeries.read(data_model_dataframe_id=data_model_dataframe_id)
+    else:
+        # Get the all data model series for the organization
+        data_model_series_info = await DataModelSeries.read(organization_id=current_user.organization_id)
 
     response_list: List[GetDataModelSeries_Out] = []
     for model in data_model_series_info:
@@ -251,6 +277,7 @@ async def get_all_data_model_series_info(
     response_description="Data model series information",
     response_model=GetDataModelSeries_Out,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
     operation_id="update_data_model_series",
 )
 async def update_data_model_series(
@@ -277,6 +304,8 @@ async def update_data_model_series(
         organization_id=current_user.organization_id,
         data_model_series_schema=data_model_series_req.series_schema,
         state=data_model_series_req.state,
+        name=data_model_series_req.name,
+        description=data_model_series_req.description,
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -286,6 +315,7 @@ async def update_data_model_series(
     path="/data-models-series/{data_model_series_id}",
     description="Soft delete data model series",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
     operation_id="delete_data_model_series",
 )
 async def delete_data_model_series(

@@ -23,12 +23,14 @@ from sail_dns_management_client.api.default import add_domain_dns_post
 from sail_dns_management_client.models import DomainData
 
 import app.utils.azure as azure
-from app.api.authentication import get_current_user
+from app.api.authentication import RoleChecker, get_current_user
 from app.api.data_federations import get_data_federation, get_existing_dataset_key
 from app.api.dataset_versions import get_all_dataset_versions, get_dataset_version
 from app.data import operations as data_service
+from app.models.accounts import UserRole
 from app.models.authentication import TokenData
 from app.models.common import BasicObjectInfo, PyObjectId
+from app.models.dataset_versions import DatasetVersionState
 from app.models.secure_computation_nodes import (
     DatasetBasicInformation,
     DatasetInformation,
@@ -58,6 +60,7 @@ router = APIRouter()
     response_model_by_alias=False,
     response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.RESEARCHER]))],
     operation_id="register_secure_computation_node",
 )
 async def register_secure_computation_node(
@@ -101,14 +104,22 @@ async def register_secure_computation_node(
         dataset_id = dataset.id
         response = await get_all_dataset_versions(dataset_id=dataset_id, current_user=current_user)
 
-        # Get the latest version
-        latest_version = response.dataset_versions[0].id
+        # Add all the dataset versions
+        for dataset_version in response.dataset_versions:
+            # check if the dataset version is uploaded and active
+            if dataset_version.state is not DatasetVersionState.ACTIVE:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Dataset version {dataset_version.name} from {dataset.name} must be uploaded and active. It is owned by {dataset_version.organization.name}",
+                )
 
-        dataset_info.append(
-            DatasetInformation(
-                id=dataset_id, version_id=latest_version, data_owner_id=response.dataset_versions[0].organization.id
+            dataset_info.append(
+                DatasetInformation(
+                    id=dataset_id,
+                    version_id=dataset_version.id,
+                    data_owner_id=dataset_version.organization.id,
+                )
             )
-        )
 
     # Add the secure computation node to the database
     secure_computation_node_db = SecureComputationNode_Db(
@@ -159,6 +170,7 @@ async def register_secure_computation_node(
     response_model_by_alias=False,
     response_model_exclude_unset=True,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.RESEARCHER]))],
     operation_id="get_all_secure_computation_nodes",
 )
 async def get_all_secure_computation_nodes(
@@ -229,6 +241,7 @@ async def get_all_secure_computation_nodes(
     response_model_by_alias=False,
     response_model_exclude_unset=True,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.RESEARCHER]))],
     operation_id="get_secure_computation_node",
 )
 async def get_secure_computation_node(
@@ -291,6 +304,7 @@ async def get_secure_computation_node(
     path="/secure-computation-node/{secure_computation_node_id}",
     description="Update secure computation node information",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.RESEARCHER]))],
     operation_id="update_secure_computation_node",
 )
 async def update_secure_computation_node(
@@ -331,6 +345,7 @@ async def update_secure_computation_node(
     path="/secure-computation-node/{secure_computation_node_id}",
     description="Deprovision SCN",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.RESEARCHER]))],
     operation_id="deprovision_secure_computation_node",
 )
 async def deprovision_secure_computation_node(
@@ -540,7 +555,7 @@ async def delete_resource_group(secure_computation_node_id: PyObjectId, current_
                 "_id": str(secure_computation_node_id),
                 "researcher_id": str(current_user.organization_id),
             },
-            {"$set": {"state": "DELETED"}},
+            {"$set": {"state": SecureComputationNodeState.DELETED.value}},
         )
 
     except Exception as exception:
@@ -552,5 +567,5 @@ async def delete_resource_group(secure_computation_node_id: PyObjectId, current_
                 "_id": str(secure_computation_node_id),
                 "researcher_id": str(current_user.organization_id),
             },
-            {"$set": {"state": "DELETE_FAILED"}},
+            {"$set": {"state": SecureComputationNodeState.DELETE_FAILED.value}},
         )

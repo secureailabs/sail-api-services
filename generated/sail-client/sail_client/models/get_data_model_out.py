@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, List, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Type, TypeVar, Union
 
 import attr
 from dateutil.parser import isoparse
@@ -18,7 +18,6 @@ class GetDataModelOut:
         description (str):
         id (str):
         organization_id (str):
-        data_model_dataframes (List[str]):
         state (DataModelState): An enumeration.
         creation_time (Union[Unset, datetime.datetime]):
     """
@@ -27,7 +26,6 @@ class GetDataModelOut:
     description: str
     id: str
     organization_id: str
-    data_model_dataframes: List[str]
     state: DataModelState
     creation_time: Union[Unset, datetime.datetime] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
@@ -37,8 +35,6 @@ class GetDataModelOut:
         description = self.description
         id = self.id
         organization_id = self.organization_id
-        data_model_dataframes = self.data_model_dataframes
-
         state = self.state.value
 
         creation_time: Union[Unset, str] = UNSET
@@ -53,7 +49,6 @@ class GetDataModelOut:
                 "description": description,
                 "id": id,
                 "organization_id": organization_id,
-                "data_model_dataframes": data_model_dataframes,
                 "state": state,
             }
         )
@@ -73,8 +68,6 @@ class GetDataModelOut:
 
         organization_id = d.pop("organization_id")
 
-        data_model_dataframes = cast(List[str], d.pop("data_model_dataframes"))
-
         state = DataModelState(d.pop("state"))
 
         _creation_time = d.pop("creation_time", UNSET)
@@ -89,7 +82,6 @@ class GetDataModelOut:
             description=description,
             id=id,
             organization_id=organization_id,
-            data_model_dataframes=data_model_dataframes,
             state=state,
             creation_time=creation_time,
         )

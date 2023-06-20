@@ -21,6 +21,7 @@ class GetDataModelSeriesOut:
         name (str):
         description (str):
         series_schema (SeriesDataModelSchema):
+        data_model_dataframe_id (str):
         id (str):
         organization_id (str):
         state (DataModelSeriesState): An enumeration.
@@ -30,6 +31,7 @@ class GetDataModelSeriesOut:
     name: str
     description: str
     series_schema: "SeriesDataModelSchema"
+    data_model_dataframe_id: str
     id: str
     organization_id: str
     state: DataModelSeriesState
@@ -41,6 +43,7 @@ class GetDataModelSeriesOut:
         description = self.description
         series_schema = self.series_schema.to_dict()
 
+        data_model_dataframe_id = self.data_model_dataframe_id
         id = self.id
         organization_id = self.organization_id
         state = self.state.value
@@ -56,6 +59,7 @@ class GetDataModelSeriesOut:
                 "name": name,
                 "description": description,
                 "series_schema": series_schema,
+                "data_model_dataframe_id": data_model_dataframe_id,
                 "id": id,
                 "organization_id": organization_id,
                 "state": state,
@@ -77,6 +81,8 @@ class GetDataModelSeriesOut:
 
         series_schema = SeriesDataModelSchema.from_dict(d.pop("series_schema"))
 
+        data_model_dataframe_id = d.pop("data_model_dataframe_id")
+
         id = d.pop("id")
 
         organization_id = d.pop("organization_id")
@@ -94,6 +100,7 @@ class GetDataModelSeriesOut:
             name=name,
             description=description,
             series_schema=series_schema,
+            data_model_dataframe_id=data_model_dataframe_id,
             id=id,
             organization_id=organization_id,
             state=state,

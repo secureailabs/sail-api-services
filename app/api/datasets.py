@@ -51,6 +51,7 @@ router = APIRouter()
     response_model=RegisterDataset_Out,
     response_model_by_alias=False,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_SUBMITTER]))],
     operation_id="register_dataset",
 )
 async def register_dataset(
@@ -155,6 +156,7 @@ async def get_dataset_internal(
     path="/datasets/{dataset_id}",
     description="Update dataset information",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_SUBMITTER]))],
     operation_id="update_dataset",
 )
 async def update_dataset(
@@ -192,7 +194,7 @@ async def update_dataset(
 @router.delete(
     path="/datasets/{dataset_id}",
     description="Disable the dataset",
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.ORGANIZATION_ADMIN]))],
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_SUBMITTER]))],
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="soft_delete_dataset",
 )

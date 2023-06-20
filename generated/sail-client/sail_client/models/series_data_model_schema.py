@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Type, TypeVar, Union, cast
 
 import attr
 
+from ..models.series_data_model_type import SeriesDataModelType
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="SeriesDataModelSchema")
@@ -11,9 +12,8 @@ T = TypeVar("T", bound="SeriesDataModelSchema")
 class SeriesDataModelSchema:
     """
     Attributes:
-        type (str):
+        type (SeriesDataModelType): An enumeration.
         series_name (str):
-        series_data_model_id (str):
         list_value (Union[Unset, List[str]]):
         unit (Union[Unset, str]):
         min_ (Union[Unset, float]):
@@ -21,9 +21,8 @@ class SeriesDataModelSchema:
         resolution (Union[Unset, float]):
     """
 
-    type: str
+    type: SeriesDataModelType
     series_name: str
-    series_data_model_id: str
     list_value: Union[Unset, List[str]] = UNSET
     unit: Union[Unset, str] = UNSET
     min_: Union[Unset, float] = UNSET
@@ -32,9 +31,9 @@ class SeriesDataModelSchema:
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        type = self.type
+        type = self.type.value
+
         series_name = self.series_name
-        series_data_model_id = self.series_data_model_id
         list_value: Union[Unset, List[str]] = UNSET
         if not isinstance(self.list_value, Unset):
             list_value = self.list_value
@@ -50,7 +49,6 @@ class SeriesDataModelSchema:
             {
                 "type": type,
                 "series_name": series_name,
-                "series_data_model_id": series_data_model_id,
             }
         )
         if list_value is not UNSET:
@@ -69,11 +67,9 @@ class SeriesDataModelSchema:
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        type = d.pop("type")
+        type = SeriesDataModelType(d.pop("type"))
 
         series_name = d.pop("series_name")
-
-        series_data_model_id = d.pop("series_data_model_id")
 
         list_value = cast(List[str], d.pop("list_value", UNSET))
 
@@ -88,7 +84,6 @@ class SeriesDataModelSchema:
         series_data_model_schema = cls(
             type=type,
             series_name=series_name,
-            series_data_model_id=series_data_model_id,
             list_value=list_value,
             unit=unit,
             min_=min_,

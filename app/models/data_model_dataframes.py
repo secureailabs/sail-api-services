@@ -29,13 +29,13 @@ class DataModelDataframeState(Enum):
 class DataModelDataframe_Base(SailBaseModel):
     name: str = Field()
     description: str = Field()
+    data_model_id: PyObjectId = Field()
 
 
 class DataModelDataframe_Db(DataModelDataframe_Base):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field()
-    data_model_series: List[PyObjectId] = Field()
     state: DataModelDataframeState = Field()
 
 
@@ -43,7 +43,6 @@ class GetDataModelDataframe_Out(DataModelDataframe_Base):
     id: PyObjectId = Field(alias="_id")
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     organization_id: PyObjectId = Field()
-    data_model_series: List[PyObjectId] = Field()
     state: DataModelDataframeState = Field()
 
 
@@ -60,6 +59,6 @@ class RegisterDataModelDataframe_Out(SailBaseModel):
 
 
 class UpdateDataModelDataframe_In(SailBaseModel):
-    data_model_series_to_add: Optional[List[PyObjectId]] = Field(default=None)
-    data_model_series_to_remove: Optional[List[PyObjectId]] = Field(default=None)
+    name: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)
     state: Optional[DataModelDataframeState] = Field(default=None)

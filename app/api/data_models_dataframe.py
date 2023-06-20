@@ -12,14 +12,15 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
+from os import name
 from typing import List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, Response, status
 from fastapi.encoders import jsonable_encoder
 
-from app.api.authentication import get_current_user
-from app.api.data_federations import get_data_federation
+from app.api.authentication import RoleChecker, get_current_user
 from app.data import operations as data_service
+from app.models.accounts import UserRole
 from app.models.authentication import TokenData
 from app.models.common import PyObjectId
 from app.models.data_model_dataframes import (
@@ -63,6 +64,7 @@ class DataModelDataframe:
     async def read(
         organization_id: Optional[PyObjectId] = None,
         data_model_dataframe_id: Optional[PyObjectId] = None,
+        data_model_id: Optional[PyObjectId] = None,
         throw_on_not_found: bool = True,
     ) -> List[DataModelDataframe_Db]:
         """
@@ -81,6 +83,8 @@ class DataModelDataframe:
             query["_id"] = data_model_dataframe_id
         if organization_id:
             query["organization_id"] = organization_id
+        if data_model_id:
+            query["data_model_id"] = data_model_id
         if not query:
             raise Exception("Invalid query")
 
@@ -106,8 +110,8 @@ class DataModelDataframe:
     async def update(
         data_model_dataframe_id: PyObjectId,
         organization_id: PyObjectId,
-        data_model_series_to_add: Optional[List[PyObjectId]] = None,
-        data_model_series_to_remove: Optional[List[PyObjectId]] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
         state: Optional[DataModelDataframeState] = None,
     ):
         """
@@ -124,19 +128,31 @@ class DataModelDataframe:
         update_request = {}
         if state:
             update_request["$set"] = {"state": state.value}
-        if data_model_series_to_add:
-            update_request["$push"] = {"data_model_series": {"$each": list(map(str, data_model_series_to_add))}}
-        if data_model_series_to_remove:
-            update_request["$pull"] = {"data_model_series": {"$in": list(map(str, data_model_series_to_remove))}}
+        if name:
+            update_request["$set"] = {"name": name}
+        if description:
+            update_request["$set"] = {"description": description}
 
         if not update_request:
             raise Exception("Invalid update request")
 
-        return await data_service.update_many(
+        update_result = await data_service.update_many(
             collection=DataModelDataframe.DB_COLLECTION_DATA_MODEL_DATAFRAME,
-            query={"_id": str(data_model_dataframe_id), "organization_id": str(organization_id)},
+            query={
+                "_id": str(data_model_dataframe_id),
+                "organization_id": str(organization_id),
+                "state": {"$ne": DataModelDataframeState.DELETED.value},
+            },
             data=jsonable_encoder(update_request),
         )
+
+        if update_result.modified_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Data model dataframe update failed",
+            )
+
+        return update_result
 
 
 @router.post(
@@ -147,6 +163,7 @@ class DataModelDataframe:
     response_model_by_alias=False,
     response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
     operation_id="register_data_model_dataframe",
 )
 async def register_data_model_dataframe(
@@ -170,7 +187,7 @@ async def register_data_model_dataframe(
         name=data_model_dataframe_req.name,
         description=data_model_dataframe_req.description,
         organization_id=current_user.organization_id,
-        data_model_series=[],
+        data_model_id=data_model_dataframe_req.data_model_id,
         state=DataModelDataframeState.ACTIVE,
     )
 
@@ -222,6 +239,7 @@ async def get_data_model_dataframe_info(
     operation_id="get_all_data_model_dataframe_info",
 )
 async def get_all_data_model_dataframe_info(
+    data_model_id: Optional[PyObjectId] = Query(default=None, description="UUID of Data Model"),
     current_user: TokenData = Depends(get_current_user),
 ) -> GetMultipleDataModelDataframe_Out:
     """
@@ -235,8 +253,11 @@ async def get_all_data_model_dataframe_info(
     :return: Data model dataframe information and list of SCNs
     :rtype: GetDataModelDataframe_Out
     """
-    # Get the data model dataframe
-    data_model_dataframe_info = await DataModelDataframe.read(organization_id=current_user.organization_id)
+    if data_model_id:
+        data_model_dataframe_info = await DataModelDataframe.read(data_model_id=data_model_id)
+    else:
+        # Get all the data model dataframes for the current organization
+        data_model_dataframe_info = await DataModelDataframe.read(organization_id=current_user.organization_id)
 
     response_list: List[GetDataModelDataframe_Out] = []
     for model in data_model_dataframe_info:
@@ -250,6 +271,7 @@ async def get_all_data_model_dataframe_info(
     description="Update data model dataframe",
     response_description="Data model dataframe information",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
     operation_id="update_data_model_dataframe",
 )
 async def update_data_model_dataframe(
@@ -274,8 +296,9 @@ async def update_data_model_dataframe(
     await DataModelDataframe.update(
         data_model_dataframe_id=data_model_dataframe_id,
         organization_id=current_user.organization_id,
-        data_model_series_to_add=data_model_dataframe_req.data_model_series_to_add,
-        data_model_series_to_remove=data_model_dataframe_req.data_model_series_to_remove,
+        name=data_model_dataframe_req.name,
+        description=data_model_dataframe_req.description,
+        state=data_model_dataframe_req.state,
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -285,6 +308,7 @@ async def update_data_model_dataframe(
     path="/data-models-dataframes/{data_model_dataframe_id}",
     description="Soft delete data model dataframe",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
     operation_id="delete_data_model_dataframe",
 )
 async def delete_data_model_dataframe(

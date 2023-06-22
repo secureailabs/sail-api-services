@@ -182,9 +182,11 @@ async def register_dataset(
     :return: Dataset Id
     :rtype: RegisterDataset_Out
     """
+    from app.api.data_federations import add_dataset
+
     # Check if there is an existing dataset with the same name
-    existing_dataset = await Datasets.read(name=dataset_req.name, organization_id=current_user.organization_id)
     # If there is an existing dataset with the same name, return the existing dataset ID
+    existing_dataset = await Datasets.read(name=dataset_req.name, organization_id=current_user.organization_id)
     if existing_dataset:
         dataset_db = existing_dataset[0]
         response.status_code = status.HTTP_200_OK
@@ -194,6 +196,10 @@ async def register_dataset(
     dataset_db = Dataset_Db(
         **dataset_req.dict(), organization_id=current_user.organization_id, state=DatasetState.CREATING_STORAGE
     )
+    # Add the dataset to the federation
+    await add_dataset(dataset_req.data_federation_id, dataset_db.id, current_user=current_user)
+
+    # Create the dataset in the database
     await Datasets.create(dataset_db)
 
     # Create a file share for the dataset

@@ -224,7 +224,7 @@ async def refresh_for_access_token(
 )
 async def get_current_user_info(
     current_user: User_Db = Depends(get_current_user),
-):
+) -> UserInfo_Out:
     found_user = await data_service.find_one(DB_COLLECTION_USERS, {"_id": str(current_user.id)})
     if not found_user:
         raise HTTPException(status_code=404, detail="User not found")

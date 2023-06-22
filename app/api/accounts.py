@@ -12,7 +12,6 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
-
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 
@@ -57,9 +56,11 @@ router = APIRouter()
 async def register_organization(
     organization: RegisterOrganization_In = Body(description="Organization details"),
 ):
-    # Don't allow registering as SAIL_ADMIN user role
+    # Don't allow registering as SAIL_ADMIN user role if a SAIL_ADMIN already exists
     if UserRole.SAIL_ADMIN in organization.admin_roles:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot register as SAIL_ADMIN")
+        sail_admin_db = await data_service.find_one(DB_COLLECTION_USERS, {"roles": UserRole.SAIL_ADMIN.value})
+        if sail_admin_db:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="SAIL_ADMIN already exists")
 
     # Check if the admin is already registered
     user_db = await data_service.find_one(DB_COLLECTION_USERS, {"email": organization.admin_email})
@@ -302,7 +303,38 @@ async def get_users(
     return GetMultipleUsers_Out(users=users_out)
 
 
-########################################################################################################################
+@router.patch(
+    path="/organizations/{organization_id}/upgrade",
+    description="Upgrade the organization to a non-free plan",
+    response_model_by_alias=False,
+    response_model_exclude_unset=True,
+    dependencies=[Depends(RoleChecker(allowed_roles=[]))],
+    status_code=status.HTTP_200_OK,
+    operation_id="upgrade_organization",
+)
+async def upgrade_organization(
+    organization_id: PyObjectId = Path(description="UUID of the organization"),
+    current_user: TokenData = Depends(get_current_user),
+) -> Response:
+    """
+    Upgrade the organization to a non-free plan
+
+    :param organization_id: "UUID of the organization"
+    :type organization_id: PyObjectId, optional
+    :param current_user: current user information, must be a SAIL Admin
+    :type current_user: TokenData, optional
+    :return: List of users in the organization
+    :rtype: GetMultipleUsers_Out
+    """
+    update_response = await data_service.update_many(
+        DB_COLLECTION_USERS, {"organization_id": str(organization_id)}, {"$set": {"freemium": False}}
+    )
+    if update_response.modified_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 async def get_all_admins(organization_id: PyObjectId) -> GetMultipleUsers_Out:
     """
     Private internal call to get all the admins of an organization
@@ -353,9 +385,7 @@ async def get_user(
     current_user: TokenData = Depends(get_current_user),
 ):
     # User must be admin of same organization or should be a SAIL Admin
-    if UserRole.SAIL_ADMIN in current_user.roles:
-        pass
-    elif UserRole.ORGANIZATION_ADMIN in current_user.roles:
+    if UserRole.ORGANIZATION_ADMIN in current_user.roles:
         if organization_id != current_user.organization_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
 
@@ -395,7 +425,22 @@ async def update_user_info(
     user_id: PyObjectId = Path(description="UUID of the user"),
     update_user_info: UpdateUser_In = Body(description="User information to update"),
     current_user: TokenData = Depends(get_current_user),
-):
+) -> Response:
+    """
+    Update user information.
+
+    :param organization_id: UUID of the organization
+    :type organization_id: PyObjectId, optional
+    :param user_id: UUID of the user
+    :type user_id: PyObjectId, optional
+    :param update_user_info: User information to update
+    :type update_user_info: UpdateUser_In, optional
+    :param current_user: Current user information
+    :type current_user: TokenData, optional
+    :return: 204 No Content
+    :rtype: Response
+    """
+
     # User must be admin of same organization or should be a SAIL Admin or same user
     if user_id == current_user.id:
         pass
@@ -404,6 +449,8 @@ async def update_user_info(
     elif UserRole.ORGANIZATION_ADMIN in current_user.roles:
         if organization_id != current_user.organization_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
 
     # Check if the user exists
     user = await data_service.find_one(
@@ -411,25 +458,45 @@ async def update_user_info(
     )
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
     user_db = User_Db(**user)
-    # Only admin can update the role and account state
-    if update_user_info.roles or update_user_info.account_state:
-        if UserRole.ORGANIZATION_ADMIN in current_user.roles:
+
+    if update_user_info.roles:
+        # Free user can only have the DATA_MODEL_EDITOR role
+        if user_db.freemium:
+            new_roles_copy = update_user_info.roles.copy()
+            # remove the roles that are allowed for free users only if they are in the list
+            for role in [UserRole.ORGANIZATION_ADMIN, UserRole.SAIL_ADMIN, UserRole.DATA_MODEL_EDITOR]:
+                if role in new_roles_copy:
+                    new_roles_copy.remove(role)
+
+            if new_roles_copy:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Free user can only have the DATA_MODEL_EDITOR role"
+                )
+
+        # don't allow to change the role of the user to SAIL_ADMIN
+        if UserRole.SAIL_ADMIN in update_user_info.roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
+
+        # Only organization admin or sail admin can update the role and account state
+        if UserRole.ORGANIZATION_ADMIN in current_user.roles or UserRole.SAIL_ADMIN in current_user.roles:
             user_db.roles = update_user_info.roles if update_user_info.roles else user_db.roles
+        else:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
+
+    # Only organization admin or sail admin can update and account state
+    if update_user_info.account_state:
+        if UserRole.ORGANIZATION_ADMIN in current_user.roles or UserRole.SAIL_ADMIN in current_user.roles:
             user_db.account_state = (
                 update_user_info.account_state if update_user_info.account_state else user_db.account_state
             )
         else:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
 
-    # Other info can be updated by the same user only
+    # Other info can be updated by org admin, sail admin or the user itself
     if update_user_info.job_title or update_user_info.avatar:
-        if current_user.id == user_id:
-            user_db.job_title = update_user_info.job_title if update_user_info.job_title else user_db.job_title
-            user_db.avatar = update_user_info.avatar if update_user_info.avatar else user_db.avatar
-        else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
+        user_db.job_title = update_user_info.job_title if update_user_info.job_title else user_db.job_title
+        user_db.avatar = update_user_info.avatar if update_user_info.avatar else user_db.avatar
 
     await data_service.update_one(
         DB_COLLECTION_USERS,

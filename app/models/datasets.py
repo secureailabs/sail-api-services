@@ -50,7 +50,7 @@ class Dataset_Db(Dataset_Base):
 
 
 class RegisterDataset_In(Dataset_Base):
-    pass
+    data_federation_id: PyObjectId = Field(...)
 
 
 class RegisterDataset_Out(SailBaseModel):

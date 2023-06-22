@@ -879,13 +879,6 @@ async def send_invite_email(subject: str, email_body: str, emails: List[EmailStr
     send_email(email_req)
 
 
-@router.put(
-    path="/data-federations/{data_federation_id}/datasets/{dataset_id}",
-    description="Add a dataset to a data federation",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_SUBMITTER]))],
-    operation_id="add_dataset",
-)
 async def add_dataset(
     data_federation_id: PyObjectId = Path(
         description="UUID of the Data federation to which the dataset is being added"
@@ -917,9 +910,6 @@ async def add_dataset(
     if not data_federation_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unauthorised")
     data_federation_db = DataFederation_Db(**data_federation_db)
-
-    # Check if the dataset exists
-    await Datasets.read(dataset_id=dataset_id, organization_id=current_user.organization_id)
 
     # Add the dataset to the data federation
     if dataset_id not in data_federation_db.datasets_id:
@@ -996,6 +986,7 @@ async def remove_dataset(
     response_model=DatasetEncryptionKey_Out,
     response_model_by_alias=False,
     response_model_exclude_unset=True,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_SUBMITTER]))],
     status_code=status.HTTP_201_CREATED,
     operation_id="get_dataset_key",
 )
@@ -1075,6 +1066,7 @@ async def get_dataset_key(
     response_model_by_alias=False,
     response_model_exclude_unset=True,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.RESEARCHER]))],
     operation_id="get_existing_dataset_key",
 )
 async def get_existing_dataset_key(

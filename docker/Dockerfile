@@ -33,10 +33,8 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /srv/mongodb/db0 && chown -R mongodb:mongodb /srv/mongodb/db0
 RUN mongod --port 27017 --dbpath /srv/mongodb/db0 --replSet rs0 --bind_ip localhost --fork --logpath /var/log/mongod.log
 
-COPY docker/requirements.txt /requirements.txt
+COPY requirements.txt /requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY docker/nginx.conf /etc/nginx/nginx.conf
 
 RUN useradd --system promtail
 COPY docker/promtail_local_config.yaml /promtail_local_config.yaml
@@ -50,5 +48,6 @@ RUN pip install --no-cache-dir /sail_dns_management_client-0.1.0-py3-none-any.wh
 
 COPY app /app
 COPY sailvm.json /sailvm.json
+COPY sailvm-cvm.json /sailvm-cvm.json
 
 ENTRYPOINT [ "/Entrypoint.sh" ]

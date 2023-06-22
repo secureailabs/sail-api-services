@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "sail-api-services"
+version = "0.1.0"
+description = ""
+authors = ["Prawal Gangwar <prawal@secureailabs.com>"]
+readme = "README.md"
+packages = [{include = "sail_api_services"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.97.0"
+uvicorn = "^0.22.0"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = "^1.7.4"
+pydantic = {extras = ["email"], version = "^1.10.9"}
+msrestazure = "^0.6.4"
+azure-identity = "^1.13.0"
+azure-keyvault = "^4.2.0"
+azure-mgmt-compute = "^30.0.0"
+azure-mgmt-network = "^23.1.0"
+azure-mgmt-resource = "^23.0.1"
+azure-mgmt-storage = "^21.0.0"
+azure-storage-file-share = "^12.12.0"
+azure-keyvault-keys = "^4.8.0"
+azure-keyvault-secrets = "^4.7.0"
+fastapi-responses = {git = "https://github.com/secureailabs/fastapi-responses.git", rev = "0.0.1"}
+python-multipart = "^0.0.6"
+aiohttp = "^3.8.4"
+motor = "^3.2.0"
+pyyml = "^0.0.2"
+
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "4.0.1"
+black = "^23.3.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

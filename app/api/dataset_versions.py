@@ -136,9 +136,9 @@ class DatasetVersion:
 
         query = {}
         if organization_id:
-            query["organization_id"] = organization_id
+            query["organization_id"] = str(organization_id)
         if dataset_version_id:
-            query["_id"] = dataset_version_id
+            query["_id"] = str(dataset_version_id)
 
         update_response = await data_service.update_many(
             collection=DatasetVersion.DB_COLLECTION_DATASET_VERSIONS,

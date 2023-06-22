@@ -138,9 +138,9 @@ class Datasets:
 
         query = {}
         if dataset_id:
-            query["_id"] = dataset_id
+            query["_id"] = str(dataset_id)
         if organization_id:
-            query["organization_id"] = organization_id
+            query["organization_id"] = str(organization_id)
 
         update_response = await data_service.update_many(
             collection=Datasets.DB_COLLECTION_DATASETS,
@@ -230,7 +230,7 @@ async def get_all_datasets(current_user: TokenData = Depends(get_current_user)):
     :return: List of datasets
     :rtype: GetMultipleDataset_Out
     """
-    datasets = await Datasets.read(organization_id=current_user.organization_id)
+    datasets = await Datasets.read(organization_id=current_user.organization_id, throw_on_not_found=False)
 
     # Add the organization information to the dataset
     organization = await cache.get_basic_orgnization(id=current_user.organization_id)

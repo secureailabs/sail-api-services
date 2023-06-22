@@ -31,21 +31,9 @@ async def get_all_data_federations(
 
 ## Developer Virtual Environment
 To get started with the developemt environment, build a virtual development environment and install all the requirements using:
-`make install`
+`poetry shell`
+`poetry install`
 
-To activate the virtual development environment on Linux, run:
-`source venv38-sail_dev/bin/activate`
-To activate the virtual development environment on Windows, run:
-`.\venv38-sail_dev\Scripts\activate`
-
-## Tester Virtual Environment
-To get started with the developemt environment, build a virtual development environment and install all the requirements using:
-`./build/test_setup.sh`
-
-To activate the virtual development environment on Linux, run:
-`source venv38-sail_test/bin/activate`
-To activate the virtual development environment on Windows, run:
-`.\venv38-sail_test\Scripts\activate`
 ## Generators
 <TBD>
 
@@ -96,7 +84,7 @@ make build_image
 ```
 make run_image
 ```
-Note: make sure the InitializationVevtor.json file is present in the root directory of the project
+Note: make sure updated InitializationVevtor.json file is present in the root directory of the project
 
 ### Populate the database with test data
 Refer to the README.md in the Engineering/database-initialization folder.

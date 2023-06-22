@@ -186,7 +186,9 @@ async def register_dataset(
 
     # Check if there is an existing dataset with the same name
     # If there is an existing dataset with the same name, return the existing dataset ID
-    existing_dataset = await Datasets.read(name=dataset_req.name, organization_id=current_user.organization_id)
+    existing_dataset = await Datasets.read(
+        name=dataset_req.name, organization_id=current_user.organization_id, throw_on_not_found=False
+    )
     if existing_dataset:
         dataset_db = existing_dataset[0]
         response.status_code = status.HTTP_200_OK

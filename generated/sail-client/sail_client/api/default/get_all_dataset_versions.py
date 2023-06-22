@@ -6,7 +6,6 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.get_multiple_dataset_version_out import GetMultipleDatasetVersionOut
-from ...models.http_exception_obj import HTTPExceptionObj
 from ...models.validation_error import ValidationError
 from ...types import UNSET, Response
 
@@ -39,7 +38,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Client, response: httpx.Response
-) -> Optional[Union[GetMultipleDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Optional[Union[GetMultipleDatasetVersionOut, ValidationError]]:
     if response.status_code == HTTPStatus.OK:
         response_200 = GetMultipleDatasetVersionOut.from_dict(response.json())
 
@@ -48,10 +47,6 @@ def _parse_response(
         response_422 = ValidationError.from_dict(response.json())
 
         return response_422
-    if response.status_code == HTTPStatus.NOT_FOUND:
-        response_404 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_404
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -60,7 +55,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Client, response: httpx.Response
-) -> Response[Union[GetMultipleDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Response[Union[GetMultipleDatasetVersionOut, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -73,7 +68,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     dataset_id: str,
-) -> Response[Union[GetMultipleDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Response[Union[GetMultipleDatasetVersionOut, ValidationError]]:
     """Get All Dataset Versions
 
      Get list of all the dataset-versions for the dataset
@@ -86,7 +81,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetMultipleDatasetVersionOut, HTTPExceptionObj, ValidationError]]
+        Response[Union[GetMultipleDatasetVersionOut, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -106,7 +101,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     dataset_id: str,
-) -> Optional[Union[GetMultipleDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Optional[Union[GetMultipleDatasetVersionOut, ValidationError]]:
     """Get All Dataset Versions
 
      Get list of all the dataset-versions for the dataset
@@ -119,7 +114,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetMultipleDatasetVersionOut, HTTPExceptionObj, ValidationError]
+        Union[GetMultipleDatasetVersionOut, ValidationError]
     """
 
     return sync_detailed(
@@ -132,7 +127,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     dataset_id: str,
-) -> Response[Union[GetMultipleDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Response[Union[GetMultipleDatasetVersionOut, ValidationError]]:
     """Get All Dataset Versions
 
      Get list of all the dataset-versions for the dataset
@@ -145,7 +140,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetMultipleDatasetVersionOut, HTTPExceptionObj, ValidationError]]
+        Response[Union[GetMultipleDatasetVersionOut, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -163,7 +158,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     dataset_id: str,
-) -> Optional[Union[GetMultipleDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Optional[Union[GetMultipleDatasetVersionOut, ValidationError]]:
     """Get All Dataset Versions
 
      Get list of all the dataset-versions for the dataset
@@ -176,7 +171,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetMultipleDatasetVersionOut, HTTPExceptionObj, ValidationError]
+        Union[GetMultipleDatasetVersionOut, ValidationError]
     """
 
     return (

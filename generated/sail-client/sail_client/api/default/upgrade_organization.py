@@ -11,20 +11,17 @@ from ...types import Response
 
 
 def _get_kwargs(
-    data_federation_id: str,
-    dataset_id: str,
+    organization_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Dict[str, Any]:
-    url = "{}/data-federations/{data_federation_id}/datasets/{dataset_id}".format(
-        client.base_url, data_federation_id=data_federation_id, dataset_id=dataset_id
-    )
+    url = "{}/organizations/{organization_id}/upgrade".format(client.base_url, organization_id=organization_id)
 
     headers: Dict[str, str] = client.get_headers()
     cookies: Dict[str, Any] = client.get_cookies()
 
     return {
-        "method": "put",
+        "method": "patch",
         "url": url,
         "headers": headers,
         "cookies": cookies,
@@ -36,9 +33,9 @@ def _get_kwargs(
 def _parse_response(
     *, client: Client, response: httpx.Response
 ) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
-    if response.status_code == HTTPStatus.NO_CONTENT:
-        response_204 = cast(Any, None)
-        return response_204
+    if response.status_code == HTTPStatus.OK:
+        response_200 = cast(Any, response.json())
+        return response_200
     if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
         response_422 = ValidationError.from_dict(response.json())
 
@@ -47,10 +44,6 @@ def _parse_response(
         response_404 = HTTPExceptionObj.from_dict(response.json())
 
         return response_404
-    if response.status_code == HTTPStatus.UNAUTHORIZED:
-        response_401 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_401
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -69,18 +62,16 @@ def _build_response(
 
 
 def sync_detailed(
-    data_federation_id: str,
-    dataset_id: str,
+    organization_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
-    """Add Dataset
+    """Upgrade Organization
 
-     Add a dataset to a data federation
+     Upgrade the organization to a non-free plan
 
     Args:
-        data_federation_id (str): UUID of the Data federation to which the dataset is being added
-        dataset_id (str): UUID of the dataset that is being added to the data federation
+        organization_id (str): UUID of the organization
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -91,8 +82,7 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
-        data_federation_id=data_federation_id,
-        dataset_id=dataset_id,
+        organization_id=organization_id,
         client=client,
     )
 
@@ -105,18 +95,16 @@ def sync_detailed(
 
 
 def sync(
-    data_federation_id: str,
-    dataset_id: str,
+    organization_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
-    """Add Dataset
+    """Upgrade Organization
 
-     Add a dataset to a data federation
+     Upgrade the organization to a non-free plan
 
     Args:
-        data_federation_id (str): UUID of the Data federation to which the dataset is being added
-        dataset_id (str): UUID of the dataset that is being added to the data federation
+        organization_id (str): UUID of the organization
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -127,25 +115,22 @@ def sync(
     """
 
     return sync_detailed(
-        data_federation_id=data_federation_id,
-        dataset_id=dataset_id,
+        organization_id=organization_id,
         client=client,
     ).parsed
 
 
 async def asyncio_detailed(
-    data_federation_id: str,
-    dataset_id: str,
+    organization_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
-    """Add Dataset
+    """Upgrade Organization
 
-     Add a dataset to a data federation
+     Upgrade the organization to a non-free plan
 
     Args:
-        data_federation_id (str): UUID of the Data federation to which the dataset is being added
-        dataset_id (str): UUID of the dataset that is being added to the data federation
+        organization_id (str): UUID of the organization
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -156,8 +141,7 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
-        data_federation_id=data_federation_id,
-        dataset_id=dataset_id,
+        organization_id=organization_id,
         client=client,
     )
 
@@ -168,18 +152,16 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    data_federation_id: str,
-    dataset_id: str,
+    organization_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
-    """Add Dataset
+    """Upgrade Organization
 
-     Add a dataset to a data federation
+     Upgrade the organization to a non-free plan
 
     Args:
-        data_federation_id (str): UUID of the Data federation to which the dataset is being added
-        dataset_id (str): UUID of the dataset that is being added to the data federation
+        organization_id (str): UUID of the organization
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -191,8 +173,7 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
-            data_federation_id=data_federation_id,
-            dataset_id=dataset_id,
+            organization_id=organization_id,
             client=client,
         )
     ).parsed

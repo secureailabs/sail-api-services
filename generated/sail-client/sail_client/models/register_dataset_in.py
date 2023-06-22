@@ -15,12 +15,14 @@ class RegisterDatasetIn:
         description (str):
         tags (str):
         format_ (DatasetFormat): An enumeration.
+        data_federation_id (str):
     """
 
     name: str
     description: str
     tags: str
     format_: DatasetFormat
+    data_federation_id: str
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -28,6 +30,8 @@ class RegisterDatasetIn:
         description = self.description
         tags = self.tags
         format_ = self.format_.value
+
+        data_federation_id = self.data_federation_id
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -37,6 +41,7 @@ class RegisterDatasetIn:
                 "description": description,
                 "tags": tags,
                 "format": format_,
+                "data_federation_id": data_federation_id,
             }
         )
 
@@ -53,11 +58,14 @@ class RegisterDatasetIn:
 
         format_ = DatasetFormat(d.pop("format"))
 
+        data_federation_id = d.pop("data_federation_id")
+
         register_dataset_in = cls(
             name=name,
             description=description,
             tags=tags,
             format_=format_,
+            data_federation_id=data_federation_id,
         )
 
         register_dataset_in.additional_properties = d

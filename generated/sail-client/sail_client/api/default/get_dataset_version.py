@@ -6,7 +6,6 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.get_dataset_version_out import GetDatasetVersionOut
-from ...models.http_exception_obj import HTTPExceptionObj
 from ...models.validation_error import ValidationError
 from ...types import Response
 
@@ -33,7 +32,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Client, response: httpx.Response
-) -> Optional[Union[GetDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Optional[Union[GetDatasetVersionOut, ValidationError]]:
     if response.status_code == HTTPStatus.OK:
         response_200 = GetDatasetVersionOut.from_dict(response.json())
 
@@ -42,10 +41,6 @@ def _parse_response(
         response_422 = ValidationError.from_dict(response.json())
 
         return response_422
-    if response.status_code == HTTPStatus.NOT_FOUND:
-        response_404 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_404
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -54,7 +49,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Client, response: httpx.Response
-) -> Response[Union[GetDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Response[Union[GetDatasetVersionOut, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -67,10 +62,10 @@ def sync_detailed(
     dataset_version_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[GetDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Response[Union[GetDatasetVersionOut, ValidationError]]:
     """Get Dataset Version
 
-     Get the information about a dataset
+     Get the information about a dataset version
 
     Args:
         dataset_version_id (str): UUID of the dataset version
@@ -80,7 +75,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetDatasetVersionOut, HTTPExceptionObj, ValidationError]]
+        Response[Union[GetDatasetVersionOut, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -100,10 +95,10 @@ def sync(
     dataset_version_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[GetDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Optional[Union[GetDatasetVersionOut, ValidationError]]:
     """Get Dataset Version
 
-     Get the information about a dataset
+     Get the information about a dataset version
 
     Args:
         dataset_version_id (str): UUID of the dataset version
@@ -113,7 +108,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetDatasetVersionOut, HTTPExceptionObj, ValidationError]
+        Union[GetDatasetVersionOut, ValidationError]
     """
 
     return sync_detailed(
@@ -126,10 +121,10 @@ async def asyncio_detailed(
     dataset_version_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[GetDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Response[Union[GetDatasetVersionOut, ValidationError]]:
     """Get Dataset Version
 
-     Get the information about a dataset
+     Get the information about a dataset version
 
     Args:
         dataset_version_id (str): UUID of the dataset version
@@ -139,7 +134,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetDatasetVersionOut, HTTPExceptionObj, ValidationError]]
+        Response[Union[GetDatasetVersionOut, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -157,10 +152,10 @@ async def asyncio(
     dataset_version_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[GetDatasetVersionOut, HTTPExceptionObj, ValidationError]]:
+) -> Optional[Union[GetDatasetVersionOut, ValidationError]]:
     """Get Dataset Version
 
-     Get the information about a dataset
+     Get the information about a dataset version
 
     Args:
         dataset_version_id (str): UUID of the dataset version
@@ -170,7 +165,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetDatasetVersionOut, HTTPExceptionObj, ValidationError]
+        Union[GetDatasetVersionOut, ValidationError]
     """
 
     return (

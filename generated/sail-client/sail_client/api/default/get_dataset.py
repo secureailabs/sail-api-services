@@ -6,7 +6,6 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.get_dataset_out import GetDatasetOut
-from ...models.http_exception_obj import HTTPExceptionObj
 from ...models.validation_error import ValidationError
 from ...types import Response
 
@@ -31,9 +30,7 @@ def _get_kwargs(
     }
 
 
-def _parse_response(
-    *, client: Client, response: httpx.Response
-) -> Optional[Union[GetDatasetOut, HTTPExceptionObj, ValidationError]]:
+def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Union[GetDatasetOut, ValidationError]]:
     if response.status_code == HTTPStatus.OK:
         response_200 = GetDatasetOut.from_dict(response.json())
 
@@ -42,19 +39,13 @@ def _parse_response(
         response_422 = ValidationError.from_dict(response.json())
 
         return response_422
-    if response.status_code == HTTPStatus.NOT_FOUND:
-        response_404 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_404
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
-def _build_response(
-    *, client: Client, response: httpx.Response
-) -> Response[Union[GetDatasetOut, HTTPExceptionObj, ValidationError]]:
+def _build_response(*, client: Client, response: httpx.Response) -> Response[Union[GetDatasetOut, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -67,7 +58,7 @@ def sync_detailed(
     dataset_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[GetDatasetOut, HTTPExceptionObj, ValidationError]]:
+) -> Response[Union[GetDatasetOut, ValidationError]]:
     """Get Dataset
 
      Get the information about a dataset
@@ -80,7 +71,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetDatasetOut, HTTPExceptionObj, ValidationError]]
+        Response[Union[GetDatasetOut, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -100,7 +91,7 @@ def sync(
     dataset_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[GetDatasetOut, HTTPExceptionObj, ValidationError]]:
+) -> Optional[Union[GetDatasetOut, ValidationError]]:
     """Get Dataset
 
      Get the information about a dataset
@@ -113,7 +104,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetDatasetOut, HTTPExceptionObj, ValidationError]
+        Union[GetDatasetOut, ValidationError]
     """
 
     return sync_detailed(
@@ -126,7 +117,7 @@ async def asyncio_detailed(
     dataset_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[GetDatasetOut, HTTPExceptionObj, ValidationError]]:
+) -> Response[Union[GetDatasetOut, ValidationError]]:
     """Get Dataset
 
      Get the information about a dataset
@@ -139,7 +130,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetDatasetOut, HTTPExceptionObj, ValidationError]]
+        Response[Union[GetDatasetOut, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -157,7 +148,7 @@ async def asyncio(
     dataset_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[GetDatasetOut, HTTPExceptionObj, ValidationError]]:
+) -> Optional[Union[GetDatasetOut, ValidationError]]:
     """Get Dataset
 
      Get the information about a dataset
@@ -170,7 +161,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetDatasetOut, HTTPExceptionObj, ValidationError]
+        Union[GetDatasetOut, ValidationError]
     """
 
     return (

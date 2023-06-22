@@ -23,6 +23,7 @@ class UserInfoOut:
         id (str):
         organization (BasicObjectInfo):
         avatar (Union[Unset, str]):
+        freemium (Union[Unset, bool]):  Default: True.
     """
 
     name: str
@@ -32,6 +33,7 @@ class UserInfoOut:
     id: str
     organization: "BasicObjectInfo"
     avatar: Union[Unset, str] = UNSET
+    freemium: Union[Unset, bool] = True
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -48,6 +50,7 @@ class UserInfoOut:
         organization = self.organization.to_dict()
 
         avatar = self.avatar
+        freemium = self.freemium
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -63,6 +66,8 @@ class UserInfoOut:
         )
         if avatar is not UNSET:
             field_dict["avatar"] = avatar
+        if freemium is not UNSET:
+            field_dict["freemium"] = freemium
 
         return field_dict
 
@@ -90,6 +95,8 @@ class UserInfoOut:
 
         avatar = d.pop("avatar", UNSET)
 
+        freemium = d.pop("freemium", UNSET)
+
         user_info_out = cls(
             name=name,
             email=email,
@@ -98,6 +105,7 @@ class UserInfoOut:
             id=id,
             organization=organization,
             avatar=avatar,
+            freemium=freemium,
         )
 
         user_info_out.additional_properties = d

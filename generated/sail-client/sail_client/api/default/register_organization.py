@@ -46,10 +46,6 @@ def _parse_response(
         response_422 = ValidationError.from_dict(response.json())
 
         return response_422
-    if response.status_code == HTTPStatus.BAD_REQUEST:
-        response_400 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_400
     if response.status_code == HTTPStatus.CONFLICT:
         response_409 = HTTPExceptionObj.from_dict(response.json())
 

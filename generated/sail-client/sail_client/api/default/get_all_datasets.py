@@ -1,12 +1,11 @@
 from http import HTTPStatus
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.get_multiple_dataset_out import GetMultipleDatasetOut
-from ...models.http_exception_obj import HTTPExceptionObj
 from ...types import Response
 
 
@@ -29,26 +28,18 @@ def _get_kwargs(
     }
 
 
-def _parse_response(
-    *, client: Client, response: httpx.Response
-) -> Optional[Union[GetMultipleDatasetOut, HTTPExceptionObj]]:
+def _parse_response(*, client: Client, response: httpx.Response) -> Optional[GetMultipleDatasetOut]:
     if response.status_code == HTTPStatus.OK:
         response_200 = GetMultipleDatasetOut.from_dict(response.json())
 
         return response_200
-    if response.status_code == HTTPStatus.NOT_FOUND:
-        response_404 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_404
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
-def _build_response(
-    *, client: Client, response: httpx.Response
-) -> Response[Union[GetMultipleDatasetOut, HTTPExceptionObj]]:
+def _build_response(*, client: Client, response: httpx.Response) -> Response[GetMultipleDatasetOut]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -60,7 +51,7 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-) -> Response[Union[GetMultipleDatasetOut, HTTPExceptionObj]]:
+) -> Response[GetMultipleDatasetOut]:
     """Get All Datasets
 
      Get list of all the datasets for the current organization
@@ -70,7 +61,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetMultipleDatasetOut, HTTPExceptionObj]]
+        Response[GetMultipleDatasetOut]
     """
 
     kwargs = _get_kwargs(
@@ -88,7 +79,7 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[GetMultipleDatasetOut, HTTPExceptionObj]]:
+) -> Optional[GetMultipleDatasetOut]:
     """Get All Datasets
 
      Get list of all the datasets for the current organization
@@ -98,7 +89,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetMultipleDatasetOut, HTTPExceptionObj]
+        GetMultipleDatasetOut
     """
 
     return sync_detailed(
@@ -109,7 +100,7 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-) -> Response[Union[GetMultipleDatasetOut, HTTPExceptionObj]]:
+) -> Response[GetMultipleDatasetOut]:
     """Get All Datasets
 
      Get list of all the datasets for the current organization
@@ -119,7 +110,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetMultipleDatasetOut, HTTPExceptionObj]]
+        Response[GetMultipleDatasetOut]
     """
 
     kwargs = _get_kwargs(
@@ -135,7 +126,7 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[GetMultipleDatasetOut, HTTPExceptionObj]]:
+) -> Optional[GetMultipleDatasetOut]:
     """Get All Datasets
 
      Get list of all the datasets for the current organization
@@ -145,7 +136,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetMultipleDatasetOut, HTTPExceptionObj]
+        GetMultipleDatasetOut
     """
 
     return (

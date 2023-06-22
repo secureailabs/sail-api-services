@@ -5,7 +5,6 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.http_exception_obj import HTTPExceptionObj
 from ...models.validation_error import ValidationError
 from ...types import Response
 
@@ -30,9 +29,7 @@ def _get_kwargs(
     }
 
 
-def _parse_response(
-    *, client: Client, response: httpx.Response
-) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
+def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Union[Any, ValidationError]]:
     if response.status_code == HTTPStatus.NO_CONTENT:
         response_204 = cast(Any, None)
         return response_204
@@ -40,23 +37,13 @@ def _parse_response(
         response_422 = ValidationError.from_dict(response.json())
 
         return response_422
-    if response.status_code == HTTPStatus.NOT_FOUND:
-        response_404 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_404
-    if response.status_code == HTTPStatus.FORBIDDEN:
-        response_403 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_403
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
-def _build_response(
-    *, client: Client, response: httpx.Response
-) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
+def _build_response(*, client: Client, response: httpx.Response) -> Response[Union[Any, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -69,7 +56,7 @@ def sync_detailed(
     dataset_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
+) -> Response[Union[Any, ValidationError]]:
     """Soft Delete Dataset
 
      Disable the dataset
@@ -82,7 +69,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPExceptionObj, ValidationError]]
+        Response[Union[Any, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -102,7 +89,7 @@ def sync(
     dataset_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
+) -> Optional[Union[Any, ValidationError]]:
     """Soft Delete Dataset
 
      Disable the dataset
@@ -115,7 +102,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPExceptionObj, ValidationError]
+        Union[Any, ValidationError]
     """
 
     return sync_detailed(
@@ -128,7 +115,7 @@ async def asyncio_detailed(
     dataset_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
+) -> Response[Union[Any, ValidationError]]:
     """Soft Delete Dataset
 
      Disable the dataset
@@ -141,7 +128,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPExceptionObj, ValidationError]]
+        Response[Union[Any, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -159,7 +146,7 @@ async def asyncio(
     dataset_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
+) -> Optional[Union[Any, ValidationError]]:
     """Soft Delete Dataset
 
      Disable the dataset
@@ -172,7 +159,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPExceptionObj, ValidationError]
+        Union[Any, ValidationError]
     """
 
     return (

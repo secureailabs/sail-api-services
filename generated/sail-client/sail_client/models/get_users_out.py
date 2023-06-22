@@ -1,8 +1,9 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar, Union
 
 import attr
 
 from ..models.user_role import UserRole
+from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.basic_object_info import BasicObjectInfo
@@ -19,18 +20,18 @@ class GetUsersOut:
         email (str):
         job_title (str):
         roles (List[UserRole]):
-        avatar (str):
         id (str):
         organization (BasicObjectInfo):
+        avatar (Union[Unset, str]):
     """
 
     name: str
     email: str
     job_title: str
     roles: List[UserRole]
-    avatar: str
     id: str
     organization: "BasicObjectInfo"
+    avatar: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -43,9 +44,10 @@ class GetUsersOut:
 
             roles.append(roles_item)
 
-        avatar = self.avatar
         id = self.id
         organization = self.organization.to_dict()
+
+        avatar = self.avatar
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -55,11 +57,12 @@ class GetUsersOut:
                 "email": email,
                 "job_title": job_title,
                 "roles": roles,
-                "avatar": avatar,
                 "id": id,
                 "organization": organization,
             }
         )
+        if avatar is not UNSET:
+            field_dict["avatar"] = avatar
 
         return field_dict
 
@@ -81,20 +84,20 @@ class GetUsersOut:
 
             roles.append(roles_item)
 
-        avatar = d.pop("avatar")
-
         id = d.pop("id")
 
         organization = BasicObjectInfo.from_dict(d.pop("organization"))
+
+        avatar = d.pop("avatar", UNSET)
 
         get_users_out = cls(
             name=name,
             email=email,
             job_title=job_title,
             roles=roles,
-            avatar=avatar,
             id=id,
             organization=organization,
+            avatar=avatar,
         )
 
         get_users_out.additional_properties = d

@@ -44,10 +44,6 @@ def _parse_response(
         response_422 = ValidationError.from_dict(response.json())
 
         return response_422
-    if response.status_code == HTTPStatus.NOT_FOUND:
-        response_404 = HTTPExceptionObj.from_dict(response.json())
-
-        return response_404
     if response.status_code == HTTPStatus.CONFLICT:
         response_409 = HTTPExceptionObj.from_dict(response.json())
 

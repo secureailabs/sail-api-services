@@ -1,6 +1,8 @@
-from typing import Any, Dict, List, Type, TypeVar
+from typing import Any, Dict, List, Type, TypeVar, Union
 
 import attr
+
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="UpdateOrganizationIn")
 
@@ -9,14 +11,14 @@ T = TypeVar("T", bound="UpdateOrganizationIn")
 class UpdateOrganizationIn:
     """
     Attributes:
-        name (str):
-        description (str):
-        avatar (str):
+        name (Union[Unset, str]):
+        description (Union[Unset, str]):
+        avatar (Union[Unset, str]):
     """
 
-    name: str
-    description: str
-    avatar: str
+    name: Union[Unset, str] = UNSET
+    description: Union[Unset, str] = UNSET
+    avatar: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -26,24 +28,24 @@ class UpdateOrganizationIn:
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update(
-            {
-                "name": name,
-                "description": description,
-                "avatar": avatar,
-            }
-        )
+        field_dict.update({})
+        if name is not UNSET:
+            field_dict["name"] = name
+        if description is not UNSET:
+            field_dict["description"] = description
+        if avatar is not UNSET:
+            field_dict["avatar"] = avatar
 
         return field_dict
 
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        name = d.pop("name")
+        name = d.pop("name", UNSET)
 
-        description = d.pop("description")
+        description = d.pop("description", UNSET)
 
-        avatar = d.pop("avatar")
+        avatar = d.pop("avatar", UNSET)
 
         update_organization_in = cls(
             name=name,

@@ -235,6 +235,7 @@ async def get_data_model_dataframe_info(
     response_description="All Data model dataframe information for the current organization or data model",
     response_model=GetMultipleDataModelDataframe_Out,
     status_code=status.HTTP_200_OK,
+    response_model_by_alias=False,
     operation_id="get_all_data_model_dataframe_info",
 )
 async def get_all_data_model_dataframe_info(

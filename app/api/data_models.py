@@ -223,6 +223,7 @@ async def get_data_model_info(
     description="Get all data model",
     response_description="All Data model information for the current organization",
     response_model=GetMultipleDataModel_Out,
+    response_model_by_alias=False,
     status_code=status.HTTP_200_OK,
     operation_id="get_all_data_model_info",
 )

@@ -240,6 +240,7 @@ async def get_data_model_series_info(
     response_description="All Data model series information for the current organization or data model",
     response_model=GetMultipleDataModelSeries_Out,
     status_code=status.HTTP_200_OK,
+    response_model_by_alias=False,
     operation_id="get_all_data_model_series_info",
 )
 async def get_all_data_model_series_info(

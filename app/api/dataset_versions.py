@@ -90,13 +90,13 @@ class DatasetVersion:
 
         query = {}
         if dataset_version_id:
-            query["_id"] = dataset_version_id
+            query["_id"] = str(dataset_version_id)
         if organization_id:
-            query["organization_id"] = organization_id
+            query["organization_id"] = str(organization_id)
         if name:
             query["name"] = name
         if dataset_id:
-            query["dataset_id"] = dataset_id
+            query["dataset_id"] = str(dataset_id)
 
         response = await data_service.find_by_query(
             collection=DatasetVersion.DB_COLLECTION_DATASET_VERSIONS,

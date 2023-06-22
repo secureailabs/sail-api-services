@@ -38,7 +38,7 @@ async def get_basic_object(id: PyObjectId, collection_name: str) -> BasicObjectI
         # Get the user from the database
         object = await data_service.find_one(collection_name, {"_id": str(id)})
         if not object:
-            raise Exception(f"{id} in {collection_name} not found")
+            raise Exception(f"{str(id)} in {collection_name} not found")
         basic_object = BasicObjectInfo(id=id, name=object["name"])
         # Add the user to the cache
         GLOBAL_CACHE[id] = basic_object

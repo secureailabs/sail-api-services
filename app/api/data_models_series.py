@@ -127,15 +127,15 @@ class DataModelSeries:
         :rtype: _type_
         """
 
-        update_request = {}
+        update_request = {"$set": {}}
         if state:
-            update_request["$set"] = {"state": state.value}
+            update_request["$set"]["state"] = state.value
         if data_model_series_schema:
-            update_request["$set"] = {"series_schema": data_model_series_schema}
+            update_request["$set"]["series_schema"] = data_model_series_schema
         if name:
-            update_request["$set"] = {"name": name}
+            update_request["$set"]["name"] = name
         if description:
-            update_request["$set"] = {"description": description}
+            update_request["$set"]["description"] = description
 
         if not update_request:
             raise Exception("Invalid update request")

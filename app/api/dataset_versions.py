@@ -126,13 +126,13 @@ class DatasetVersion:
         Update a dataset version
         """
 
-        update_request = {}
+        update_request = {"$set": {}}
         if state:
-            update_request["$set"] = {"state": state.value}
+            update_request["$set"]["state"] = state.value
         if description:
-            update_request["$set"] = {"description": description}
+            update_request["$set"]["description"] = description
         if note:
-            update_request["$set"] = {"note": note}
+            update_request["$set"]["note"] = note
 
         query = {}
         if organization_id:

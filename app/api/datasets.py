@@ -124,17 +124,17 @@ class Datasets:
         Update a dataset version
         """
 
-        update_request = {}
+        update_request = {"$set": {}}
         if state:
-            update_request["$set"] = {"state": state.value}
+            update_request["$set"]["state"] = state.value
         if description:
-            update_request["$set"] = {"description": description}
+            update_request["$set"]["description"] = description
         if note:
-            update_request["$set"] = {"note": note}
+            update_request["$set"]["note"] = note
         if tag:
-            update_request["$set"] = {"tag": tag}
+            update_request["$set"]["tag"] = tag
         if encryption_key:
-            update_request["$set"] = {"encryption_key": encryption_key}
+            update_request["$set"]["encryption_key"] = encryption_key
 
         query = {}
         if dataset_id:
@@ -145,7 +145,7 @@ class Datasets:
         update_response = await data_service.update_many(
             collection=Datasets.DB_COLLECTION_DATASETS,
             query=query,
-            data=update_request,
+            data=jsonable_encoder(update_request),
         )
 
         if update_response.modified_count == 0:

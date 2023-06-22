@@ -120,15 +120,15 @@ class DataModel:
         :rtype: _type_
         """
 
-        update_request = {}
+        update_request = {"$set": {}}
         if state:
-            update_request["$set"] = {"state": state.value}
+            update_request["$set"]["state"] = state.value
         if name:
-            update_request["$set"] = {"name": name}
+            update_request["$set"]["name"] = name
         if description:
-            update_request["$set"] = {"description": description}
+            update_request["$set"]["description"] = description
 
-        return await data_service.update_many(
+        update_response = await data_service.update_many(
             collection=DataModel.DB_COLLECTION_DATA_MODEL,
             query={
                 "_id": str(data_model_id),
@@ -137,6 +137,12 @@ class DataModel:
             },
             data=update_request,
         )
+
+        if update_response.modified_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Data model not found",
+            )
 
 
 @router.post(
@@ -273,6 +279,8 @@ async def update_data_model(
         data_model_id=data_model_id,
         organization_id=current_user.organization_id,
         state=data_model_req.state,
+        name=data_model_req.name,
+        description=data_model_req.description,
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -12,6 +12,8 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
+from typing import List
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 
@@ -43,7 +45,23 @@ DB_COLLECTION_USERS = "users"
 router = APIRouter()
 
 
-########################################################################################################################
+def is_non_free_role(user_role_list: List[UserRole]) -> bool:
+    """
+    Check if the list of roles contains a non-free role
+
+    :param user_role_list: list of roles to check
+    :type user_role_list: List[UserRole]
+    :return: True if the list contains a non-free role
+    :rtype: bool
+    """
+    free_roles = [UserRole.ORGANIZATION_ADMIN, UserRole.SAIL_ADMIN, UserRole.DATA_MODEL_EDITOR]
+    for role in user_role_list:
+        if role not in free_roles:
+            return True
+
+    return False
+
+
 @router.post(
     path="/organizations",
     description="Register new organization and the admin user",
@@ -55,12 +73,16 @@ router = APIRouter()
 )
 async def register_organization(
     organization: RegisterOrganization_In = Body(description="Organization details"),
-):
+) -> RegisterOrganization_Out:
+    free_user = True
     # Don't allow registering as SAIL_ADMIN user role if a SAIL_ADMIN already exists
     if UserRole.SAIL_ADMIN in organization.admin_roles:
         sail_admin_db = await data_service.find_one(DB_COLLECTION_USERS, {"roles": UserRole.SAIL_ADMIN.value})
+        free_user = False
         if sail_admin_db:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="SAIL_ADMIN already exists")
+    elif is_non_free_role(organization.admin_roles):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Non-free roles not allowed")
 
     # Check if the admin is already registered
     user_db = await data_service.find_one(DB_COLLECTION_USERS, {"email": organization.admin_email})
@@ -81,14 +103,14 @@ async def register_organization(
         account_state=UserAccountState.ACTIVE,
         organization_id=organization_db.id,
         avatar=organization.admin_avatar,
+        freemium=free_user,
     )
 
     await data_service.insert_one(DB_COLLECTION_USERS, jsonable_encoder(admin_user_db))
 
-    return organization_db
+    return RegisterOrganization_Out(_id=organization_db.id)
 
 
-########################################################################################################################
 @router.get(
     path="/organizations",
     description="Get list of all the organizations",
@@ -106,7 +128,6 @@ async def get_all_organizations(current_user: TokenData = Depends(get_current_us
     return GetMultipleOrganizations_Out(organizations=organizations)
 
 
-########################################################################################################################
 @router.get(
     path="/organizations/{organization_id}",
     description="Get the information about a organization",
@@ -135,7 +156,6 @@ async def get_organization(
     return GetOrganizations_Out(**organization)
 
 
-########################################################################################################################
 @router.put(
     path="/organizations/{organization_id}",
     description="Update organization information",
@@ -176,7 +196,6 @@ async def update_organization(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.delete(
     path="/organizations/{organization_id}",
     description="Disable the organization and all the users",
@@ -214,7 +233,6 @@ async def soft_delete_organization(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.post(
     path="/organizations/{organization_id}/users",
     description="Add new user to organization",
@@ -228,9 +246,10 @@ async def register_user(
     organization_id: PyObjectId = Path(description="UUID of the organization to add the user to"),
     user: RegisterUser_In = Body(description="User details to register with the organization"),
     current_user: TokenData = Depends(get_current_user),
-):
+) -> RegisterUser_Out:
     # User must be part of same organization or should be a SAIL Admin
     if UserRole.SAIL_ADMIN in current_user.roles:
+        # since SAIL_ADMIN is also a ORGANIZATION_ADMIN, the exception will be thrown as the org id will be different
         pass
     elif UserRole.ORGANIZATION_ADMIN in current_user.roles:
         if organization_id != current_user.organization_id:
@@ -241,20 +260,48 @@ async def register_user(
     if user_db:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
 
+    # Get the admin user of the organization and check if the organization is active
+    admin_user_db = await data_service.find_one(
+        DB_COLLECTION_USERS,
+        {
+            "organization_id": str(organization_id),
+            "roles": {"$all": [UserRole.ORGANIZATION_ADMIN.value]},
+            "account_state": UserAccountState.ACTIVE.value,
+        },
+    )
+    if not admin_user_db:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found. Or is inactive")
+    admin_user = User_Db(**admin_user_db)
+
+    # non-Free user roles cannot be assigned to a non-paid organization
+    if admin_user.freemium:
+        if is_non_free_role(user.roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only selected roles can be added to a non-paid organization",
+            )
+
+    # Also, don't allow the user to have a SAIL_ADMIN role
+    if UserRole.SAIL_ADMIN in user.roles:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
+
     # Create the user and add it to the database
     user_db = User_Db(
-        **user.dict(),
+        name=user.name,
+        email=user.email,
+        roles=user.roles,
+        job_title=user.job_title,
         hashed_password=get_password_hash(user.email, user.password),
         organization_id=organization_id,
         account_state=UserAccountState.ACTIVE,
+        freemium=admin_user.freemium,
     )
 
     await data_service.insert_one(DB_COLLECTION_USERS, jsonable_encoder(user_db))
 
-    return user_db
+    return RegisterUser_Out(_id=user_db.id)
 
 
-########################################################################################################################
 @router.get(
     path="/organizations/{organization_id}/users",
     description="Get all users in the organization",
@@ -309,7 +356,7 @@ async def get_users(
     response_model_by_alias=False,
     response_model_exclude_unset=True,
     dependencies=[Depends(RoleChecker(allowed_roles=[]))],
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
     operation_id="upgrade_organization",
 )
 async def upgrade_organization(
@@ -368,7 +415,6 @@ async def get_all_admins(organization_id: PyObjectId) -> GetMultipleUsers_Out:
     return GetMultipleUsers_Out(users=users_out)
 
 
-########################################################################################################################
 @router.get(
     path="/organizations/{organization_id}/users/{user_id}",
     description="Get information about a user",
@@ -408,7 +454,6 @@ async def get_user(
     )
 
 
-########################################################################################################################
 @router.put(
     path="/organizations/{organization_id}/users/{user_id}",
     description="""
@@ -462,17 +507,10 @@ async def update_user_info(
 
     if update_user_info.roles:
         # Free user can only have the DATA_MODEL_EDITOR role
-        if user_db.freemium:
-            new_roles_copy = update_user_info.roles.copy()
-            # remove the roles that are allowed for free users only if they are in the list
-            for role in [UserRole.ORGANIZATION_ADMIN, UserRole.SAIL_ADMIN, UserRole.DATA_MODEL_EDITOR]:
-                if role in new_roles_copy:
-                    new_roles_copy.remove(role)
-
-            if new_roles_copy:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Free user can only have the DATA_MODEL_EDITOR role"
-                )
+        if user_db.freemium and is_non_free_role(update_user_info.roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Free user can only have the DATA_MODEL_EDITOR role"
+            )
 
         # don't allow to change the role of the user to SAIL_ADMIN
         if UserRole.SAIL_ADMIN in update_user_info.roles:
@@ -507,7 +545,6 @@ async def update_user_info(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-########################################################################################################################
 @router.delete(
     path="/organizations/{organization_id}/users/{user_id}",
     description="Soft Delete user",

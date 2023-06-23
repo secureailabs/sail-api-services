@@ -97,7 +97,7 @@ class User_Db(User_Base):
     organization_id: PyObjectId = Field()
     last_login_time: Optional[datetime] = Field(default=None)
     failed_login_attempts: int = Field(default=0)
-    freemium: bool = Field(default=True)
+    freemium: bool = Field()
 
 
 class UserInfo_Out(User_Base):

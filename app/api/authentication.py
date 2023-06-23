@@ -151,7 +151,12 @@ async def login_for_access_token(
         )
 
     # Create the access token and refresh token and return them
-    token_data = TokenData(**found_user_db.dict(), exp=int((time() * 1000) + (ACCESS_TOKEN_EXPIRE_MINUTES * 60 * 1000)))
+    token_data = TokenData(
+        _id=found_user_db.id,
+        roles=found_user_db.roles,
+        organization_id=found_user_db.organization_id,
+        exp=int((time() * 1000) + (ACCESS_TOKEN_EXPIRE_MINUTES * 60 * 1000)),
+    )
     access_token = jwt.encode(
         claims=jsonable_encoder(token_data),
         key=get_secret("jwt_secret"),

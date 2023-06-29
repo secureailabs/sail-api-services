@@ -54,7 +54,7 @@ build_image() {
 # Run the docker image
 run_image() {
     check_docker
-    docker run -it -p 8000:8000 -v $(pwd)/certs:/etc/nginx/certs -v $(pwd)/InitializationVector.json:/InitializationVector.json $1
+    docker run -it -p 8000:8000  -v $(pwd)/app:/app -v $(pwd)/certs:/etc/nginx/certs -v $(pwd)/InitializationVector.json:/InitializationVector.json $1
 }
 
 generate_client() {

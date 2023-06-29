@@ -16,7 +16,7 @@ import base64
 import json
 import logging
 import traceback
-from typing import Callable
+from typing import Any, Callable, Dict, List, Union
 from urllib.parse import parse_qs, urlencode
 
 import aiohttp
@@ -138,7 +138,7 @@ async def server_error_exception_handler(request: Request, exc: Exception):
     await data_service.insert_one("errors", jsonable_encoder(message))
 
     # Add the exception to the audit log as well
-    add_log_message(LogLevel.ERROR, Resource.USER_ACTIVITY, json.dumps(message))
+    add_log_message(LogLevel.ERROR, Resource.USER_ACTIVITY, message)
 
     # Respond with a 500 error
     return Response(
@@ -178,14 +178,20 @@ async def get_body(request: Request) -> bytes:
     return body
 
 
-def remove_sensitive_info(request_body: dict):
-    # recursively remove sensitive data from the request body
-    for key in request_body.keys():
-        if "password" in key:
-            request_body[key] = "****"
-        elif isinstance(request_body[key], dict):
-            request_body[key] = remove_sensitive_info(request_body[key])
-    return request_body
+def remove_sensitive_info(request_body: Union[Dict, List, Any]):
+    if isinstance(request_body, Dict):
+        for key in request_body.keys():
+            if "password" in key:
+                request_body[key] = "****"
+            elif isinstance(request_body[key], dict):
+                request_body[key] = remove_sensitive_info(request_body[key])
+        return request_body
+    elif isinstance(request_body, List):
+        for i in range(len(request_body)):
+            request_body[i] = remove_sensitive_info(request_body[i])
+        return request_body
+    else:
+        return request_body
 
 
 @server.middleware("http")
@@ -227,11 +233,13 @@ async def add_audit_log(request: Request, call_next: Callable):
 
     message = {
         "user_id": user_id,
-        "request": f"{request.method} {request.url}",
+        "host": f"{request.client.host}",  # type: ignore
+        "method": f"{request.method}",
+        "url": f"{request.url.path}",
         "request_body": f"{request_body}",
         "response": f"{response.status_code}",
     }
 
-    add_log_message(LogLevel.INFO, Resource.USER_ACTIVITY, json.dumps(message, separators=(",", ":")))
+    add_log_message(LogLevel.INFO, Resource.USER_ACTIVITY, message)
 
     return response

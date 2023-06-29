@@ -13,7 +13,7 @@
 # -------------------------------------------------------------------------------
 
 import json
-from typing import List
+from typing import List, Optional
 
 import yaml
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
@@ -48,9 +48,105 @@ from app.utils import cache
 from app.utils.background_couroutines import add_async_task
 from app.utils.secrets import get_secret
 
-DB_COLLECTION_SECURE_COMPUTATION_NODE = "secure-computation-node"
-
 router = APIRouter()
+
+
+class SecureComputationNode:
+    """
+    Dataset Version CRUD operations
+    """
+
+    DB_COLLECTION_SECURE_COMPUTATION_NODE = "secure-computation-node"
+
+    @staticmethod
+    async def create(
+        secure_computation_node: SecureComputationNode_Db,
+    ):
+        """
+        Create a new dataset version
+
+        :param secure_computation_node: Secure computation node information
+        :type secure_computation_node: SecureComputationNode_Db
+        :return: Secure computation node information
+        :rtype: SecureComputationNode_Db
+        """
+        return await data_service.insert_one(
+            collection=SecureComputationNode.DB_COLLECTION_SECURE_COMPUTATION_NODE,
+            data=jsonable_encoder(secure_computation_node),
+        )
+
+    @staticmethod
+    async def read(
+        secure_computation_node_id: Optional[PyObjectId] = None,
+        organization_id: Optional[PyObjectId] = None,
+        researcher_organization_id: Optional[PyObjectId] = None,
+        researcher_user_id: Optional[PyObjectId] = None,
+        throw_on_not_found: bool = True,
+    ) -> List[SecureComputationNode_Db]:
+        secure_computation_node_list = []
+
+        query = {}
+        if secure_computation_node_id:
+            query["_id"] = str(secure_computation_node_id)
+        if organization_id:
+            query["organization_id"] = str(organization_id)
+        if researcher_organization_id:
+            query["researcher_id"] = str(researcher_organization_id)
+        if researcher_user_id:
+            query["researcher_user_id"] = str(researcher_user_id)
+
+        response = await data_service.find_by_query(
+            collection=SecureComputationNode.DB_COLLECTION_SECURE_COMPUTATION_NODE,
+            query=jsonable_encoder(query),
+        )
+
+        if response:
+            for data_model in response:
+                secure_computation_node_list.append(SecureComputationNode_Db(**data_model))
+        elif throw_on_not_found:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Secure Computation Node not found",
+            )
+
+        return secure_computation_node_list
+
+    @staticmethod
+    async def update(
+        secure_computation_node_id: PyObjectId,
+        researcher_user_id: Optional[PyObjectId] = None,
+        researcher_organization_id: Optional[PyObjectId] = None,
+        state: Optional[SecureComputationNodeState] = None,
+        detail: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
+        update_request = {"$set": {}}
+        if state:
+            update_request["$set"]["state"] = state.value
+        if detail:
+            update_request["$set"]["detail"] = detail
+        if url:
+            update_request["$set"]["url"] = url
+
+        query = {}
+        if secure_computation_node_id:
+            query["_id"] = str(secure_computation_node_id)
+        if researcher_user_id:
+            query["researcher_user_id"] = str(researcher_user_id)
+        if researcher_organization_id:
+            query["researcher_id"] = str(researcher_organization_id)
+
+        update_response = await data_service.update_many(
+            collection=SecureComputationNode.DB_COLLECTION_SECURE_COMPUTATION_NODE,
+            query=query,
+            data=jsonable_encoder(update_request),
+        )
+
+        if update_response.modified_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Secure Computation Node not found.",
+            )
 
 
 @router.post(
@@ -157,7 +253,7 @@ async def register_secure_computation_node(
     # Start the provisioning of the secure computation node in a background thread which will update the IP address
     add_async_task(provision_secure_computation_node(secure_computation_node_db, dataset_with_keys))
 
-    await data_service.insert_one(DB_COLLECTION_SECURE_COMPUTATION_NODE, jsonable_encoder(secure_computation_node_db))
+    await SecureComputationNode.create(secure_computation_node_db)
 
     return RegisterSecureComputationNode_Out(**secure_computation_node_db.dict())
 
@@ -178,17 +274,17 @@ async def get_all_secure_computation_nodes(
 ) -> GetMultipleSecureComputationNode_Out:
     from app.api.data_federations import get_data_federation
 
-    query = {
-        "researcher_id": str(current_user.organization_id),
-        "researcher_user_id": str(current_user.id),
-    }
-    secure_computation_nodes = await data_service.find_by_query(DB_COLLECTION_SECURE_COMPUTATION_NODE, query)
+    secure_computation_nodes = await SecureComputationNode.read(
+        researcher_organization_id=current_user.organization_id,
+        researcher_user_id=current_user.id,
+        throw_on_not_found=False,
+    )
 
     response_secure_computation_nodes: List[GetSecureComputationNode_Out] = []
 
     # Get the basic information of the data federation
     if secure_computation_nodes:
-        secure_computation_node = SecureComputationNode_Db(**secure_computation_nodes[0])
+        secure_computation_node = secure_computation_nodes[0]
         data_federation = await get_data_federation(secure_computation_node.data_federation_id, current_user)
 
         # Add the organization information to the data federation
@@ -199,8 +295,6 @@ async def get_all_secure_computation_nodes(
         ][0]
 
         for secure_computation_node in secure_computation_nodes:
-            secure_computation_node = SecureComputationNode_Db(**secure_computation_node)
-
             dataset_info: List[DatasetBasicInformation] = []
             for dataset in secure_computation_node.datasets:
                 # Get the basic information of the dataset
@@ -256,16 +350,14 @@ async def get_secure_computation_node(
 ):
     from app.api.data_federations import get_data_federation
 
-    query = {
-        "researcher_id": str(current_user.organization_id),
-        "_id": str(secure_computation_node_id),
-    }
-    secure_computation_node = await data_service.find_one(DB_COLLECTION_SECURE_COMPUTATION_NODE, query)
-    if not secure_computation_node:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Secure Computation Node not found")
+    secure_computation_node = await SecureComputationNode.read(
+        secure_computation_node_id=secure_computation_node_id,
+        researcher_organization_id=current_user.organization_id,
+        researcher_user_id=current_user.id,
+    )
 
     # Get the basic information of the data federation
-    secure_computation_node = SecureComputationNode_Db(**secure_computation_node)
+    secure_computation_node = secure_computation_node[0]
     data_federation = await get_data_federation(secure_computation_node.data_federation_id, current_user)
 
     # Add the organization information to the secure computation node information
@@ -324,29 +416,21 @@ async def update_secure_computation_node(
     ),
     current_user: TokenData = Depends(get_current_user),
 ):
-    # Check if the secure computation node exists
-    secure_computation_node_db = await data_service.find_one(
-        DB_COLLECTION_SECURE_COMPUTATION_NODE, {"_id": str(secure_computation_node_id)}
-    )
-    if not secure_computation_node_db:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Secure Computation Node not found")
-    secure_computation_node_db = SecureComputationNode_Db(**secure_computation_node_db)
+    secure_computation_node_db = await SecureComputationNode.read(secure_computation_node_id=secure_computation_node_id)
+    secure_computation_node_db = secure_computation_node_db[0]
 
+    new_state = secure_computation_node_db.state
     if secure_computation_node_db.state == SecureComputationNodeState.WAITING_FOR_DATA:
         if updated_secure_computation_node_info.state == SecureComputationNodeState.READY:
-            secure_computation_node_db.state = SecureComputationNodeState.READY
+            new_state = SecureComputationNodeState.READY
         elif updated_secure_computation_node_info.state == SecureComputationNodeState.IN_USE:
-            secure_computation_node_db.state = SecureComputationNodeState.IN_USE
+            new_state = SecureComputationNodeState.IN_USE
         else:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    await data_service.update_one(
-        DB_COLLECTION_SECURE_COMPUTATION_NODE,
-        {"_id": str(secure_computation_node_id)},
-        {"$set": jsonable_encoder(secure_computation_node_db)},
-    )
+    await SecureComputationNode.update(secure_computation_node_id=secure_computation_node_id, state=new_state)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -362,14 +446,8 @@ async def deprovision_secure_computation_node(
     secure_computation_node_id: PyObjectId,
     current_user: TokenData = Depends(get_current_user),
 ):
-    # Update the secure computation node and unset url
-    await data_service.update_one(
-        DB_COLLECTION_SECURE_COMPUTATION_NODE,
-        {
-            "_id": str(secure_computation_node_id),
-            "researcher_id": str(current_user.organization_id),
-        },
-        {"$set": {"state": "DELETING", "url": ""}},
+    await SecureComputationNode.update(
+        secure_computation_node_id=secure_computation_node_id, state=SecureComputationNodeState.DELETING, url=""
     )
 
     # Start a background task to deprovision the secure computation node which will update the status
@@ -406,27 +484,22 @@ async def provision_secure_computation_node(
         with open(str(secure_computation_node_db.id), "w") as outfile:
             json.dump(jsonable_encoder(securecomputationnode_json), outfile)
 
-        secure_computation_node_db = await provision_virtual_machine(
+        await provision_virtual_machine(
             secure_computation_node_db, "securecomputationnode", jsonable_encoder(securecomputationnode_json)
         )
 
-        # Update the database to mark the VM as WAITING_FOR_DATA
-        secure_computation_node_db.state = SecureComputationNodeState.READY
-        await data_service.update_one(
-            DB_COLLECTION_SECURE_COMPUTATION_NODE,
-            {"_id": str(secure_computation_node_db.id)},
-            {"$set": jsonable_encoder(secure_computation_node_db)},
+        # TODO: Wait for the the data to be uploaded on the VM before marking it as ready
+        await SecureComputationNode.update(
+            secure_computation_node_id=secure_computation_node_db.id, state=SecureComputationNodeState.READY
         )
 
     except Exception as exception:
         print(exception)
         # Update the database to mark the VM as FAILED
-        secure_computation_node_db.state = SecureComputationNodeState.FAILED
-        secure_computation_node_db.detail = str(exception)
-        await data_service.update_one(
-            DB_COLLECTION_SECURE_COMPUTATION_NODE,
-            {"_id": str(secure_computation_node_db.id)},
-            {"$set": jsonable_encoder(secure_computation_node_db)},
+        await SecureComputationNode.update(
+            secure_computation_node_id=secure_computation_node_db.id,
+            state=SecureComputationNodeState.FAILED,
+            detail=str(exception),
         )
 
 
@@ -477,7 +550,7 @@ async def provision_virtual_machine(
     virtual_machine_info_db: SecureComputationNode_Db,
     template_name: str,
     initialization_vector_json: dict,
-) -> SecureComputationNode_Db:
+) -> None:
     """
     Provision a virtual machine
 
@@ -490,11 +563,8 @@ async def provision_virtual_machine(
     :rtype: SecureComputationNode_Db
     """
     # Update the database to mark the VM as being created
-    virtual_machine_info_db.state = SecureComputationNodeState.CREATING
-    await data_service.update_one(
-        DB_COLLECTION_SECURE_COMPUTATION_NODE,
-        {"_id": str(virtual_machine_info_db.id)},
-        {"$set": jsonable_encoder(virtual_machine_info_db)},
+    await SecureComputationNode.update(
+        secure_computation_node_id=virtual_machine_info_db.id, state=SecureComputationNodeState.CREATING
     )
 
     # The name of the resource group is same as the data federation provision id
@@ -527,16 +597,12 @@ async def provision_virtual_machine(
     request = DomainData(ip=deploy_response.ip_address, domain=f"{dns_entry}.")
     add_domain_dns_post.sync(client=dns_client, json_body=request)
 
-    # Update the database to mark the VM as INITIALIZING
-    virtual_machine_info_db.url = dns_entry
-    virtual_machine_info_db.state = SecureComputationNodeState.INITIALIZING
-    await data_service.update_one(
-        DB_COLLECTION_SECURE_COMPUTATION_NODE,
-        {"_id": str(virtual_machine_info_db.id)},
-        {"$set": jsonable_encoder(virtual_machine_info_db)},
+    # Update the database to mark the VM as WAITING FOR DATA
+    await SecureComputationNode.update(
+        secure_computation_node_id=virtual_machine_info_db.id,
+        url=dns_entry,
+        state=SecureComputationNodeState.WAITING_FOR_DATA,
     )
-
-    return virtual_machine_info_db
 
 
 async def delete_resource_group(secure_computation_node_id: PyObjectId, current_user: TokenData):
@@ -559,23 +625,20 @@ async def delete_resource_group(secure_computation_node_id: PyObjectId, current_
             raise Exception(delete_response.note)
 
         # Update the secure computation node
-        await data_service.update_many(
-            DB_COLLECTION_SECURE_COMPUTATION_NODE,
-            {
-                "_id": str(secure_computation_node_id),
-                "researcher_id": str(current_user.organization_id),
-            },
-            {"$set": {"state": SecureComputationNodeState.DELETED.value}},
+        await SecureComputationNode.update(
+            secure_computation_node_id=secure_computation_node_id,
+            researcher_organization_id=current_user.organization_id,
+            researcher_user_id=current_user.id,
+            state=SecureComputationNodeState.DELETED,
         )
 
     except Exception as exception:
         print(exception)
         # Update the database to mark the VM as FAILED
-        await data_service.update_many(
-            DB_COLLECTION_SECURE_COMPUTATION_NODE,
-            {
-                "_id": str(secure_computation_node_id),
-                "researcher_id": str(current_user.organization_id),
-            },
-            {"$set": {"state": SecureComputationNodeState.DELETE_FAILED.value}},
+        await SecureComputationNode.update(
+            secure_computation_node_id=secure_computation_node_id,
+            researcher_organization_id=current_user.organization_id,
+            researcher_user_id=current_user.id,
+            state=SecureComputationNodeState.DELETE_FAILED,
+            detail=str(exception),
         )

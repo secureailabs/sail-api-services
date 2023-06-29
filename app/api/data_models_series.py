@@ -260,7 +260,9 @@ async def get_all_data_model_series_info(
     """
     if data_model_dataframe_id:
         # Get the data model series
-        data_model_series_info = await DataModelSeries.read(data_model_dataframe_id=data_model_dataframe_id)
+        data_model_series_info = await DataModelSeries.read(
+            data_model_dataframe_id=data_model_dataframe_id, throw_on_not_found=False
+        )
     else:
         # Get the all data model series for the organization
         data_model_series_info = await DataModelSeries.read(organization_id=current_user.organization_id)

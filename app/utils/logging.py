@@ -1,11 +1,12 @@
+import json
 import logging
 from enum import Enum
+from time import time
+from typing import Dict
 
 logger = logging.getLogger("apiservice")
 handler = logging.FileHandler("audit.log")
 logger.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
 handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 
@@ -27,15 +28,19 @@ class Resource(Enum):
 def add_log_message(
     level: LogLevel,
     operation_resource: Resource,
-    message: str,
+    message: Dict,
 ):
-    message = f"[{operation_resource.value}] {message}"
+    message["timestamp"] = time()
+    message["level"] = level.value
+    message["resource"] = operation_resource.value
+    message_str = json.dumps(message)
+
     if level == LogLevel.INFO:
-        logger.info(message)
+        logger.info(message_str)
     elif level == LogLevel.WARNING:
-        logger.warning(message)
+        logger.warning(message_str)
     elif level == LogLevel.ERROR:
-        logger.error(message)
+        logger.error(message_str)
     else:
         raise ValueError("Invalid log level")
     pass

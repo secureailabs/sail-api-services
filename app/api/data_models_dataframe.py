@@ -254,7 +254,7 @@ async def get_all_data_model_dataframe_info(
     :rtype: GetDataModelDataframe_Out
     """
     if data_model_id:
-        data_model_dataframe_info = await DataModelDataframe.read(data_model_id=data_model_id)
+        data_model_dataframe_info = await DataModelDataframe.read(data_model_id=data_model_id, throw_on_not_found=False)
     else:
         # Get all the data model dataframes for the current organization
         data_model_dataframe_info = await DataModelDataframe.read(organization_id=current_user.organization_id)

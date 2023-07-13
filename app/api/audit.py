@@ -260,3 +260,9 @@ def create_query_for_data_federation(query_str: str, data_federation_id: PyObjec
     query_str = f'{query_str} | url=~"/data-federations/{str(data_federation_id)}.*"'
     query_str = f'{query_str} | method=~"POST|PUT|DELETE"'
     return query_str
+
+
+def create_query_for_secure_computation_node(query_str: str, scn_id: PyObjectId):
+    query_str = f'{query_str} | url=~"/secure-computation-nodes/{str(scn_id)}.*"'
+    query_str = f'{query_str} | method=~"POST|PUT|DELETE"'
+    return query_str

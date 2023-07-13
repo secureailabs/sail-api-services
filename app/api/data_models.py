@@ -12,16 +12,19 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 
+from app import main
 from app.api.authentication import RoleChecker, get_current_user
+from app.api.data_model_versions import DataModelVersion
 from app.data import operations as data_service
 from app.models.accounts import UserRole
 from app.models.authentication import TokenData
 from app.models.common import PyObjectId
+from app.models.data_model_versions import DataModelVersion_Db, DataModelVersionState
 from app.models.data_models import (
     DataModel_Db,
     DataModelState,
@@ -31,6 +34,7 @@ from app.models.data_models import (
     RegisterDataModel_Out,
     UpdateDataModel_In,
 )
+from app.utils import cache
 
 router = APIRouter()
 
@@ -62,7 +66,8 @@ class DataModel:
     @staticmethod
     async def read(
         data_model_id: Optional[PyObjectId] = None,
-        organization_id: Optional[PyObjectId] = None,
+        maintainer_organization_id: Optional[PyObjectId] = None,
+        name: Optional[str] = None,
         throw_on_not_found: bool = True,
     ) -> List[DataModel_Db]:
         """
@@ -78,9 +83,11 @@ class DataModel:
 
         query = {}
         if data_model_id:
-            query["_id"] = data_model_id
-        if organization_id:
-            query["organization_id"] = organization_id
+            query["_id"] = str(data_model_id)
+        if maintainer_organization_id:
+            query["maintainer_organization_id"] = str(maintainer_organization_id)
+        if name:
+            query["name"] = name
 
         # Don't return deleted data models
         query["state"] = {"$ne": DataModelState.DELETED.value}
@@ -108,6 +115,7 @@ class DataModel:
         name: Optional[str] = None,
         description: Optional[str] = None,
         state: Optional[DataModelState] = None,
+        current_version_id: Optional[PyObjectId] = None,
     ):
         """
         Update a data model
@@ -127,21 +135,22 @@ class DataModel:
             update_request["$set"]["name"] = name
         if description:
             update_request["$set"]["description"] = description
+        if current_version_id:
+            update_request["$set"]["current_version_id"] = str(current_version_id)
 
-        update_response = await data_service.update_many(
+        update_response = await data_service.update_one(
             collection=DataModel.DB_COLLECTION_DATA_MODEL,
             query={
                 "_id": str(data_model_id),
-                "organization_id": str(organization_id),
+                "maintainer_organization_id": str(organization_id),
                 "state": {"$ne": DataModelState.DELETED.value},
             },
-            data=update_request,
+            data=jsonable_encoder(update_request),
         )
-
         if update_response.modified_count == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Data model not found",
+                detail=f"Data model not found. No update performed.",
             )
 
 
@@ -171,18 +180,29 @@ async def register_data_model(
     :rtype: RegisterDataModel_Out
     """
 
-    # Create a new provision object
+    # Check if data model with same name exists
+    data_model_list = await DataModel.read(
+        name=data_model_req.name,
+        throw_on_not_found=False,
+    )
+    if data_model_list:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Data model with name {data_model_req.name} already exists",
+        )
+
+    # Create a new data model
     data_model_db = DataModel_Db(
         name=data_model_req.name,
         description=data_model_req.description,
-        organization_id=current_user.organization_id,
+        maintainer_organization_id=current_user.organization_id,
         state=DataModelState.DRAFT,
     )
 
     # Add to the database
     await DataModel.create(data_model_db)
 
-    return RegisterDataModel_Out(**data_model_db.dict())
+    return RegisterDataModel_Out(_id=data_model_db.id)
 
 
 @router.get(
@@ -210,12 +230,16 @@ async def get_data_model_info(
     :rtype: GetDataModel
     """
     # Get the data model
-    provision_db = await DataModel.read(
+    datamodel_db_list = await DataModel.read(
         data_model_id=data_model_id,
         throw_on_not_found=True,
     )
+    datamodel_db = datamodel_db_list[0]
 
-    return GetDataModel_Out(**(provision_db[0].dict()))
+    return GetDataModel_Out(
+        **(datamodel_db.dict()),
+        maintainer_organization=await cache.get_basic_orgnization(datamodel_db.maintainer_organization_id),
+    )
 
 
 @router.get(
@@ -242,18 +266,60 @@ async def get_all_data_model_info(
     :rtype: GetDataModel
     """
     # Get the data model
-    data_model_info = await DataModel.read()
+    data_model_info = await DataModel.read(
+        maintainer_organization_id=current_user.organization_id,
+        throw_on_not_found=False,
+    )
 
     response_list: List[GetDataModel_Out] = []
     for model in data_model_info:
-        response_list.append(GetDataModel_Out(**model.dict()))
+        response_list.append(
+            GetDataModel_Out(
+                **model.dict(),
+                maintainer_organization=await cache.get_basic_orgnization(model.maintainer_organization_id),
+            )
+        )
 
     return GetMultipleDataModel_Out(data_models=response_list)
 
 
+@router.get(
+    path="/data-model/{data_model_id}/versions",
+    description="Get all published data model versions",
+    response_description="List of all published Data model versions",
+    status_code=status.HTTP_200_OK,
+    response_model_by_alias=False,
+    operation_id="get_all_data_model_version_names",
+)
+async def get_all_data_model_version_names(
+    data_model_id: PyObjectId,
+    current_user: TokenData = Depends(get_current_user),
+) -> Dict[PyObjectId, str]:
+    """
+    Get data model information
+
+    :param data_model_id: Data model Id
+    :type data_model_id: PyObjectId
+    :param current_user: current user information, defaults to Depends(get_current_user)
+    :type current_user: TokenData, optional
+    :raises HTTPException: 404 if data model not found
+    :return: Data model information and list of SCNs
+    :rtype: GetDataModel
+    """
+
+    # Get the data model
+    datamodel_db_list = await DataModelVersion.read(
+        data_model_id=data_model_id,
+        state=DataModelVersionState.PUBLISHED,
+        throw_on_not_found=False,
+    )
+
+    return {datamodel_db.id: datamodel_db.name for datamodel_db in datamodel_db_list}
+
+
 @router.patch(
     path="/data-models/{data_model_id}",
-    description="Update data model to add or remove data frames",
+    description="Update data model information",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
     operation_id="update_data_model",
@@ -262,26 +328,36 @@ async def update_data_model(
     data_model_id: PyObjectId = Path(description="Data model Id to update"),
     data_model_req: UpdateDataModel_In = Body(description="Information required for updating data model"),
     current_user: TokenData = Depends(get_current_user),
-):
+) -> Response:
     """
-    Update data model
+    Update data model information
 
-    :param data_model_id: Data model Id
-    :type data_model_id: PyObjectId
-    :param data_model_req: information required for updating data model, defaults to Body(...)
+    :param data_model_id: Data model Id to update
+    :type data_model_id: PyObjectId, optional
+    :param data_model_req: Information required for updating data model
     :type data_model_req: UpdateDataModel_In, optional
     :param current_user: current user information
     :type current_user: TokenData, optional
-    :raises http_exception: 404 if data model not found
-    :return: None
+    :return: 204 if successful
     :rtype: Response
     """
+
+    # Check if the current version is a valid published version
+    if data_model_req.current_version_id:
+        await DataModelVersion.read(
+            data_model_version_id=data_model_req.current_version_id,
+            data_model_id=data_model_id,
+            state=DataModelVersionState.PUBLISHED,
+            throw_on_not_found=True,
+        )
+
     await DataModel.update(
         data_model_id=data_model_id,
         organization_id=current_user.organization_id,
-        state=data_model_req.state,
         name=data_model_req.name,
         description=data_model_req.description,
+        state=data_model_req.state,
+        current_version_id=data_model_req.current_version_id,
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

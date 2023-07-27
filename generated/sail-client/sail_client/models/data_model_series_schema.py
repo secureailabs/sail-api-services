@@ -5,15 +5,14 @@ import attr
 from ..models.series_data_model_type import SeriesDataModelType
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="SeriesDataModelSchema")
+T = TypeVar("T", bound="DataModelSeriesSchema")
 
 
 @attr.s(auto_attribs=True)
-class SeriesDataModelSchema:
+class DataModelSeriesSchema:
     """
     Attributes:
         type (SeriesDataModelType): An enumeration.
-        series_name (str):
         list_value (Union[Unset, List[str]]):
         unit (Union[Unset, str]):
         min_ (Union[Unset, float]):
@@ -22,7 +21,6 @@ class SeriesDataModelSchema:
     """
 
     type: SeriesDataModelType
-    series_name: str
     list_value: Union[Unset, List[str]] = UNSET
     unit: Union[Unset, str] = UNSET
     min_: Union[Unset, float] = UNSET
@@ -33,7 +31,6 @@ class SeriesDataModelSchema:
     def to_dict(self) -> Dict[str, Any]:
         type = self.type.value
 
-        series_name = self.series_name
         list_value: Union[Unset, List[str]] = UNSET
         if not isinstance(self.list_value, Unset):
             list_value = self.list_value
@@ -48,7 +45,6 @@ class SeriesDataModelSchema:
         field_dict.update(
             {
                 "type": type,
-                "series_name": series_name,
             }
         )
         if list_value is not UNSET:
@@ -69,8 +65,6 @@ class SeriesDataModelSchema:
         d = src_dict.copy()
         type = SeriesDataModelType(d.pop("type"))
 
-        series_name = d.pop("series_name")
-
         list_value = cast(List[str], d.pop("list_value", UNSET))
 
         unit = d.pop("unit", UNSET)
@@ -81,9 +75,8 @@ class SeriesDataModelSchema:
 
         resolution = d.pop("resolution", UNSET)
 
-        series_data_model_schema = cls(
+        data_model_series_schema = cls(
             type=type,
-            series_name=series_name,
             list_value=list_value,
             unit=unit,
             min_=min_,
@@ -91,8 +84,8 @@ class SeriesDataModelSchema:
             resolution=resolution,
         )
 
-        series_data_model_schema.additional_properties = d
-        return series_data_model_schema
+        data_model_series_schema.additional_properties = d
+        return data_model_series_schema
 
     @property
     def additional_keys(self) -> List[str]:

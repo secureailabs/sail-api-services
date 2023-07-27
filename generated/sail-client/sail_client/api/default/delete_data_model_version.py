@@ -1,46 +1,40 @@
 from http import HTTPStatus
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, cast
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.register_data_model_dataframe_in import RegisterDataModelDataframeIn
-from ...models.register_data_model_dataframe_out import RegisterDataModelDataframeOut
 from ...models.validation_error import ValidationError
 from ...types import Response
 
 
 def _get_kwargs(
+    data_model_version_id: str,
     *,
     client: AuthenticatedClient,
-    json_body: RegisterDataModelDataframeIn,
 ) -> Dict[str, Any]:
-    url = "{}/data-models-dataframes".format(client.base_url)
+    url = "{}/data-model-versions/{data_model_version_id}".format(
+        client.base_url, data_model_version_id=data_model_version_id
+    )
 
     headers: Dict[str, str] = client.get_headers()
     cookies: Dict[str, Any] = client.get_cookies()
 
-    json_json_body = json_body.to_dict()
-
     return {
-        "method": "post",
+        "method": "delete",
         "url": url,
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
         "follow_redirects": client.follow_redirects,
-        "json": json_json_body,
     }
 
 
-def _parse_response(
-    *, client: Client, response: httpx.Response
-) -> Optional[Union[RegisterDataModelDataframeOut, ValidationError]]:
-    if response.status_code == HTTPStatus.CREATED:
-        response_201 = RegisterDataModelDataframeOut.from_dict(response.json())
-
-        return response_201
+def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Union[Any, ValidationError]]:
+    if response.status_code == HTTPStatus.NO_CONTENT:
+        response_204 = cast(Any, None)
+        return response_204
     if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
         response_422 = ValidationError.from_dict(response.json())
 
@@ -51,9 +45,7 @@ def _parse_response(
         return None
 
 
-def _build_response(
-    *, client: Client, response: httpx.Response
-) -> Response[Union[RegisterDataModelDataframeOut, ValidationError]]:
+def _build_response(*, client: Client, response: httpx.Response) -> Response[Union[Any, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -63,28 +55,28 @@ def _build_response(
 
 
 def sync_detailed(
+    data_model_version_id: str,
     *,
     client: AuthenticatedClient,
-    json_body: RegisterDataModelDataframeIn,
-) -> Response[Union[RegisterDataModelDataframeOut, ValidationError]]:
-    """Register Data Model Dataframe
+) -> Response[Union[Any, ValidationError]]:
+    """Delete Data Model Version
 
-     Provision data federation SCNs
+     Soft delete data model version
 
     Args:
-        json_body (RegisterDataModelDataframeIn):
+        data_model_version_id (str): Data model vesion Id to delete
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[RegisterDataModelDataframeOut, ValidationError]]
+        Response[Union[Any, ValidationError]]
     """
 
     kwargs = _get_kwargs(
+        data_model_version_id=data_model_version_id,
         client=client,
-        json_body=json_body,
     )
 
     response = httpx.request(
@@ -96,54 +88,54 @@ def sync_detailed(
 
 
 def sync(
+    data_model_version_id: str,
     *,
     client: AuthenticatedClient,
-    json_body: RegisterDataModelDataframeIn,
-) -> Optional[Union[RegisterDataModelDataframeOut, ValidationError]]:
-    """Register Data Model Dataframe
+) -> Optional[Union[Any, ValidationError]]:
+    """Delete Data Model Version
 
-     Provision data federation SCNs
+     Soft delete data model version
 
     Args:
-        json_body (RegisterDataModelDataframeIn):
+        data_model_version_id (str): Data model vesion Id to delete
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[RegisterDataModelDataframeOut, ValidationError]
+        Union[Any, ValidationError]
     """
 
     return sync_detailed(
+        data_model_version_id=data_model_version_id,
         client=client,
-        json_body=json_body,
     ).parsed
 
 
 async def asyncio_detailed(
+    data_model_version_id: str,
     *,
     client: AuthenticatedClient,
-    json_body: RegisterDataModelDataframeIn,
-) -> Response[Union[RegisterDataModelDataframeOut, ValidationError]]:
-    """Register Data Model Dataframe
+) -> Response[Union[Any, ValidationError]]:
+    """Delete Data Model Version
 
-     Provision data federation SCNs
+     Soft delete data model version
 
     Args:
-        json_body (RegisterDataModelDataframeIn):
+        data_model_version_id (str): Data model vesion Id to delete
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[RegisterDataModelDataframeOut, ValidationError]]
+        Response[Union[Any, ValidationError]]
     """
 
     kwargs = _get_kwargs(
+        data_model_version_id=data_model_version_id,
         client=client,
-        json_body=json_body,
     )
 
     async with httpx.AsyncClient(verify=client.verify_ssl) as _client:
@@ -153,28 +145,28 @@ async def asyncio_detailed(
 
 
 async def asyncio(
+    data_model_version_id: str,
     *,
     client: AuthenticatedClient,
-    json_body: RegisterDataModelDataframeIn,
-) -> Optional[Union[RegisterDataModelDataframeOut, ValidationError]]:
-    """Register Data Model Dataframe
+) -> Optional[Union[Any, ValidationError]]:
+    """Delete Data Model Version
 
-     Provision data federation SCNs
+     Soft delete data model version
 
     Args:
-        json_body (RegisterDataModelDataframeIn):
+        data_model_version_id (str): Data model vesion Id to delete
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[RegisterDataModelDataframeOut, ValidationError]
+        Union[Any, ValidationError]
     """
 
     return (
         await asyncio_detailed(
+            data_model_version_id=data_model_version_id,
             client=client,
-            json_body=json_body,
         )
     ).parsed

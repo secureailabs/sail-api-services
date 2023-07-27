@@ -1,63 +1,80 @@
-from typing import Any, Dict, List, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar
 
 import attr
 
-from ..types import UNSET, Unset
+if TYPE_CHECKING:
+    from ..models.data_model_series import DataModelSeries
 
-T = TypeVar("T", bound="RegisterDataModelIn")
+
+T = TypeVar("T", bound="DataModelDataframe")
 
 
 @attr.s(auto_attribs=True)
-class RegisterDataModelIn:
+class DataModelDataframe:
     """
     Attributes:
+        id (str):
         name (str):
         description (str):
-        tags (Union[Unset, List[str]]):
+        series (List['DataModelSeries']):
     """
 
+    id: str
     name: str
     description: str
-    tags: Union[Unset, List[str]] = UNSET
+    series: List["DataModelSeries"]
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
+        id = self.id
         name = self.name
         description = self.description
-        tags: Union[Unset, List[str]] = UNSET
-        if not isinstance(self.tags, Unset):
-            tags = self.tags
+        series = []
+        for series_item_data in self.series:
+            series_item = series_item_data.to_dict()
+
+            series.append(series_item)
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "id": id,
                 "name": name,
                 "description": description,
+                "series": series,
             }
         )
-        if tags is not UNSET:
-            field_dict["tags"] = tags
 
         return field_dict
 
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
+        from ..models.data_model_series import DataModelSeries
+
         d = src_dict.copy()
+        id = d.pop("id")
+
         name = d.pop("name")
 
         description = d.pop("description")
 
-        tags = cast(List[str], d.pop("tags", UNSET))
+        series = []
+        _series = d.pop("series")
+        for series_item_data in _series:
+            series_item = DataModelSeries.from_dict(series_item_data)
 
-        register_data_model_in = cls(
+            series.append(series_item)
+
+        data_model_dataframe = cls(
+            id=id,
             name=name,
             description=description,
-            tags=tags,
+            series=series,
         )
 
-        register_data_model_in.additional_properties = d
-        return register_data_model_in
+        data_model_dataframe.additional_properties = d
+        return data_model_dataframe
 
     @property
     def additional_keys(self) -> List[str]:

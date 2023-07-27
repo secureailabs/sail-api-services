@@ -5,19 +5,19 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.get_data_model_series_out import GetDataModelSeriesOut
+from ...models.get_all_published_data_model_version_names_response_get_all_published_data_model_version_names import (
+    GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames,
+)
 from ...models.validation_error import ValidationError
 from ...types import Response
 
 
 def _get_kwargs(
-    data_model_series_id: str,
+    data_model_id: str,
     *,
     client: AuthenticatedClient,
 ) -> Dict[str, Any]:
-    url = "{}/data-models-series/{data_model_series_id}".format(
-        client.base_url, data_model_series_id=data_model_series_id
-    )
+    url = "{}/data-model/{data_model_id}/published-versions".format(client.base_url, data_model_id=data_model_id)
 
     headers: Dict[str, str] = client.get_headers()
     cookies: Dict[str, Any] = client.get_cookies()
@@ -34,9 +34,11 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Client, response: httpx.Response
-) -> Optional[Union[GetDataModelSeriesOut, ValidationError]]:
+) -> Optional[Union[GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames, ValidationError]]:
     if response.status_code == HTTPStatus.OK:
-        response_200 = GetDataModelSeriesOut.from_dict(response.json())
+        response_200 = GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames.from_dict(
+            response.json()
+        )
 
         return response_200
     if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
@@ -51,7 +53,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Client, response: httpx.Response
-) -> Response[Union[GetDataModelSeriesOut, ValidationError]]:
+) -> Response[Union[GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -61,27 +63,27 @@ def _build_response(
 
 
 def sync_detailed(
-    data_model_series_id: str,
+    data_model_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[GetDataModelSeriesOut, ValidationError]]:
-    """Get Data Model Series Info
+) -> Response[Union[GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames, ValidationError]]:
+    """Get All Published Data Model Version Names
 
-     Get data model series
+     Get all published data model versions
 
     Args:
-        data_model_series_id (str): Data model series Id
+        data_model_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetDataModelSeriesOut, ValidationError]]
+        Response[Union[GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames, ValidationError]]
     """
 
     kwargs = _get_kwargs(
-        data_model_series_id=data_model_series_id,
+        data_model_id=data_model_id,
         client=client,
     )
 
@@ -94,53 +96,53 @@ def sync_detailed(
 
 
 def sync(
-    data_model_series_id: str,
+    data_model_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[GetDataModelSeriesOut, ValidationError]]:
-    """Get Data Model Series Info
+) -> Optional[Union[GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames, ValidationError]]:
+    """Get All Published Data Model Version Names
 
-     Get data model series
+     Get all published data model versions
 
     Args:
-        data_model_series_id (str): Data model series Id
+        data_model_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetDataModelSeriesOut, ValidationError]
+        Union[GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames, ValidationError]
     """
 
     return sync_detailed(
-        data_model_series_id=data_model_series_id,
+        data_model_id=data_model_id,
         client=client,
     ).parsed
 
 
 async def asyncio_detailed(
-    data_model_series_id: str,
+    data_model_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[GetDataModelSeriesOut, ValidationError]]:
-    """Get Data Model Series Info
+) -> Response[Union[GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames, ValidationError]]:
+    """Get All Published Data Model Version Names
 
-     Get data model series
+     Get all published data model versions
 
     Args:
-        data_model_series_id (str): Data model series Id
+        data_model_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetDataModelSeriesOut, ValidationError]]
+        Response[Union[GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames, ValidationError]]
     """
 
     kwargs = _get_kwargs(
-        data_model_series_id=data_model_series_id,
+        data_model_id=data_model_id,
         client=client,
     )
 
@@ -151,28 +153,28 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    data_model_series_id: str,
+    data_model_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[GetDataModelSeriesOut, ValidationError]]:
-    """Get Data Model Series Info
+) -> Optional[Union[GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames, ValidationError]]:
+    """Get All Published Data Model Version Names
 
-     Get data model series
+     Get all published data model versions
 
     Args:
-        data_model_series_id (str): Data model series Id
+        data_model_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetDataModelSeriesOut, ValidationError]
+        Union[GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames, ValidationError]
     """
 
     return (
         await asyncio_detailed(
-            data_model_series_id=data_model_series_id,
+            data_model_id=data_model_id,
             client=client,
         )
     ).parsed

@@ -1,45 +1,46 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar
+import datetime
+from typing import Any, Dict, List, Type, TypeVar
 
 import attr
+from dateutil.parser import isoparse
 
-if TYPE_CHECKING:
-    from ..models.series_data_model_schema import SeriesDataModelSchema
-
-
-T = TypeVar("T", bound="RegisterDataModelSeriesIn")
+T = TypeVar("T", bound="DataModelVersionBasicInfo")
 
 
 @attr.s(auto_attribs=True)
-class RegisterDataModelSeriesIn:
+class DataModelVersionBasicInfo:
     """
     Attributes:
+        id (str):
         name (str):
         description (str):
-        series_schema (SeriesDataModelSchema):
-        data_model_dataframe_id (str):
+        commit_message (str):
+        merge_time (datetime.datetime):
     """
 
+    id: str
     name: str
     description: str
-    series_schema: "SeriesDataModelSchema"
-    data_model_dataframe_id: str
+    commit_message: str
+    merge_time: datetime.datetime
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
+        id = self.id
         name = self.name
         description = self.description
-        series_schema = self.series_schema.to_dict()
-
-        data_model_dataframe_id = self.data_model_dataframe_id
+        commit_message = self.commit_message
+        merge_time = self.merge_time.isoformat()
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "id": id,
                 "name": name,
                 "description": description,
-                "series_schema": series_schema,
-                "data_model_dataframe_id": data_model_dataframe_id,
+                "commit_message": commit_message,
+                "merge_time": merge_time,
             }
         )
 
@@ -47,26 +48,27 @@ class RegisterDataModelSeriesIn:
 
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
-        from ..models.series_data_model_schema import SeriesDataModelSchema
-
         d = src_dict.copy()
+        id = d.pop("id")
+
         name = d.pop("name")
 
         description = d.pop("description")
 
-        series_schema = SeriesDataModelSchema.from_dict(d.pop("series_schema"))
+        commit_message = d.pop("commit_message")
 
-        data_model_dataframe_id = d.pop("data_model_dataframe_id")
+        merge_time = isoparse(d.pop("merge_time"))
 
-        register_data_model_series_in = cls(
+        data_model_version_basic_info = cls(
+            id=id,
             name=name,
             description=description,
-            series_schema=series_schema,
-            data_model_dataframe_id=data_model_dataframe_id,
+            commit_message=commit_message,
+            merge_time=merge_time,
         )
 
-        register_data_model_series_in.additional_properties = d
-        return register_data_model_series_in
+        data_model_version_basic_info.additional_properties = d
+        return data_model_version_basic_info
 
     @property
     def additional_keys(self) -> List[str]:

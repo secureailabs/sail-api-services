@@ -12,8 +12,8 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
-from datetime import datetime
-from typing import Dict, List, Optional
+from datetime import datetime, time
+from typing import List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.encoders import jsonable_encoder
@@ -28,13 +28,13 @@ from app.models.data_model_versions import (
     CommitDataModelVersion_In,
     DataModelDataframe,
     DataModelVersion_Db,
+    DataModelVersionBasicInfo,
     DataModelVersionState,
     GetDataModelVersion_Out,
     GetMultipleDataModelVersion_Out,
     RegisterDataModelVersion_In,
     RegisterDataModelVersion_Out,
     SaveDataModelVersion_In,
-    UpdateDataModelVersion_In,
 )
 
 router = APIRouter()
@@ -99,8 +99,9 @@ class DataModelVersion:
         if state:
             query["state"] = state.value
 
-        # Don't return deleted data models
-        query["state"] = {"$ne": DataModelVersionState.DELETED.value}
+        # Along with the state mentioned above, don't return deleted data models
+        if not state:
+            query["state"] = {"$ne": DataModelVersionState.DELETED.value}
 
         response = await data_service.find_by_query(
             collection=DataModelVersion.DB_COLLECTION_DATA_MODEL_VERSION,
@@ -120,9 +121,9 @@ class DataModelVersion:
 
     @staticmethod
     async def update(
-        data_model_version_id: PyObjectId,
-        organization_id: PyObjectId,
-        user_id: Optional[PyObjectId] = None,
+        query_data_model_version_id: PyObjectId,
+        query_organization_id: PyObjectId,
+        query_user_id: Optional[PyObjectId] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         state: Optional[DataModelVersionState] = None,
@@ -159,13 +160,13 @@ class DataModelVersion:
             update_request["$set"]["commit_time"] = commit_time
 
         update_query = {
-            "_id": str(data_model_version_id),
+            "_id": str(query_data_model_version_id),
             "state": {"$ne": DataModelVersionState.DELETED.value},
         }
-        if user_id:
-            update_query["user_id"] = str(user_id)
-        if organization_id:
-            update_query["organization_id"] = str(organization_id)
+        if query_user_id:
+            update_query["user_id"] = str(query_user_id)
+        if query_organization_id:
+            update_query["organization_id"] = str(query_organization_id)
 
         update_response = await data_service.update_one(
             collection=DataModelVersion.DB_COLLECTION_DATA_MODEL_VERSION,
@@ -226,6 +227,7 @@ async def register_data_model_version(
 
     # If previous version id is provided, check if it exists and then populate the new version with the previous version data
     dataframes = []
+    revision_history = []
     if data_model_req.previous_version_id:
         previous_version_list = await DataModelVersion.read(data_model_version_id=data_model_req.previous_version_id)
         if not previous_version_list:
@@ -236,6 +238,25 @@ async def register_data_model_version(
         else:
             # TODO: remove the comments for the dataframe copy
             dataframes = previous_version_list[0].dataframes
+            revision_history = previous_version_list[0].revision_history
+            # Add the last version to revision history
+            if (
+                previous_version_list[0].state != DataModelVersionState.PUBLISHED
+                or not previous_version_list[0].commit_message
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Previous version {data_model_req.previous_version_id} is not published yet",
+                )
+            revision_history.append(
+                DataModelVersionBasicInfo(
+                    id=previous_version_list[0].id,
+                    name=previous_version_list[0].name,
+                    description=previous_version_list[0].description,
+                    commit_message=previous_version_list[0].commit_message,
+                    merge_time=datetime.utcnow(),
+                )
+            )
 
     # Check if a data model version already exists with the provided name for the data model
     data_model_list = await DataModelVersion.read(
@@ -257,6 +278,7 @@ async def register_data_model_version(
         previous_version_id=data_model_req.previous_version_id,
         dataframes=dataframes,
         state=DataModelVersionState.DRAFT,
+        revision_history=revision_history,
     )
 
     # Add to the database
@@ -336,9 +358,9 @@ async def save_data_model(
         )
 
     await DataModelVersion.update(
-        data_model_version_id=data_model_version_id,
-        organization_id=current_user.organization_id,
-        user_id=current_user.id,
+        query_data_model_version_id=data_model_version_id,
+        query_organization_id=current_user.organization_id,
+        query_user_id=current_user.id,
         dataframes=data_model_save_req.dataframes,
     )
 
@@ -350,7 +372,7 @@ async def save_data_model(
     description="Commit the changes made to the current data model",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(RoleChecker(allowed_roles=[UserRole.DATA_MODEL_EDITOR]))],
-    operation_id="save_data_model_version",
+    operation_id="commit_data_model_version",
 )
 async def commit_data_model(
     data_model_version_id: PyObjectId = Path(description="Data model Id to update"),
@@ -372,9 +394,9 @@ async def commit_data_model(
         )
 
     await DataModelVersion.update(
-        data_model_version_id=data_model_version_id,
-        user_id=current_user.id,
-        organization_id=current_user.organization_id,
+        query_data_model_version_id=data_model_version_id,
+        query_user_id=current_user.id,
+        query_organization_id=current_user.organization_id,
         commit_message=data_model_commit_req.commit_message,
         commit_time=datetime.utcnow(),
         state=DataModelVersionState.PUBLISHED,
@@ -395,9 +417,9 @@ async def delete_data_model_version(
     current_user: TokenData = Depends(get_current_user),
 ):
     await DataModelVersion.update(
-        data_model_version_id=data_model_version_id,
-        organization_id=current_user.organization_id,
-        user_id=current_user.id,
+        query_data_model_version_id=data_model_version_id,
+        query_organization_id=current_user.organization_id,
+        query_user_id=current_user.id,
         state=DataModelVersionState.DELETED,
     )
 

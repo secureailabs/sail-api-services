@@ -2,27 +2,27 @@ from typing import Any, Dict, List, Type, TypeVar
 
 import attr
 
-T = TypeVar("T", bound="RegisterDataModelDataframeOut")
+T = TypeVar("T", bound="CommitDataModelVersionIn")
 
 
 @attr.s(auto_attribs=True)
-class RegisterDataModelDataframeOut:
+class CommitDataModelVersionIn:
     """
     Attributes:
-        id (str):
+        commit_message (str):
     """
 
-    id: str
+    commit_message: str
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        id = self.id
+        commit_message = self.commit_message
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "id": id,
+                "commit_message": commit_message,
             }
         )
 
@@ -31,14 +31,14 @@ class RegisterDataModelDataframeOut:
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        id = d.pop("id")
+        commit_message = d.pop("commit_message")
 
-        register_data_model_dataframe_out = cls(
-            id=id,
+        commit_data_model_version_in = cls(
+            commit_message=commit_message,
         )
 
-        register_data_model_dataframe_out.additional_properties = d
-        return register_data_model_dataframe_out
+        commit_data_model_version_in.additional_properties = d
+        return commit_data_model_version_in
 
     @property
     def additional_keys(self) -> List[str]:

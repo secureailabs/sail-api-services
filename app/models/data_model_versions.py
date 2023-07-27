@@ -35,9 +35,16 @@ class SeriesDataModelType(str, Enum):
     SeriesDataModelUnique = "SeriesDataModelUnique"
 
 
+class DataModelVersionBasicInfo(SailBaseModel):
+    id: PyObjectId = Field()
+    name: str = Field()
+    description: str = Field()
+    commit_message: str = Field()
+    merge_time: datetime = Field()
+
+
 class DataModelSeriesSchema(SailBaseModel):
     type: SeriesDataModelType = Field()
-    series_name: str
     list_value: Optional[List[str]]
     unit: Optional[str]
     min: Optional[float]
@@ -46,15 +53,17 @@ class DataModelSeriesSchema(SailBaseModel):
 
 
 class DataModelSeries(SailBaseModel):
+    id: PyObjectId = Field()
     name: str = Field()
     description: str = Field()
     series_schema: DataModelSeriesSchema = Field()
 
 
 class DataModelDataframe(SailBaseModel):
+    id: PyObjectId = Field()
     name: str = Field()
     description: str = Field()
-    series: List[DataModelSeries] = Field(default_factory=list)
+    series: List[DataModelSeries] = Field()
 
 
 class DataModelVersion_Base(SailBaseModel):
@@ -74,6 +83,7 @@ class DataModelVersion_Db(DataModelVersion_Base):
     user_id: PyObjectId = Field()
     dataframes: List[DataModelDataframe] = Field()
     state: DataModelVersionState = Field()
+    revision_history: List[DataModelVersionBasicInfo] = Field(default_factory=list)
 
 
 class GetDataModelVersion_Out(DataModelVersion_Base):
@@ -86,6 +96,7 @@ class GetDataModelVersion_Out(DataModelVersion_Base):
     user_id: PyObjectId = Field()
     dataframes: List[DataModelDataframe] = Field()
     state: DataModelVersionState = Field()
+    revision_history: List[DataModelVersionBasicInfo] = Field(default_factory=list)
 
 
 class GetMultipleDataModelVersion_Out(SailBaseModel):
@@ -111,4 +122,4 @@ class CommitDataModelVersion_In(SailBaseModel):
 
 
 class SaveDataModelVersion_In(SailBaseModel):
-    dataframes: List[DataModelDataframe] = Field(default_factory=list)
+    dataframes: List[DataModelDataframe] = Field()

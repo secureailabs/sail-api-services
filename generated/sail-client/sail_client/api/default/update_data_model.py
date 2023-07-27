@@ -5,6 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.http_exception_obj import HTTPExceptionObj
 from ...models.update_data_model_in import UpdateDataModelIn
 from ...models.validation_error import ValidationError
 from ...types import Response
@@ -34,7 +35,9 @@ def _get_kwargs(
     }
 
 
-def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Union[Any, ValidationError]]:
+def _parse_response(
+    *, client: Client, response: httpx.Response
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
     if response.status_code == HTTPStatus.NO_CONTENT:
         response_204 = cast(Any, None)
         return response_204
@@ -42,13 +45,19 @@ def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Uni
         response_422 = ValidationError.from_dict(response.json())
 
         return response_422
+    if response.status_code == HTTPStatus.BAD_REQUEST:
+        response_400 = HTTPExceptionObj.from_dict(response.json())
+
+        return response_400
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
-def _build_response(*, client: Client, response: httpx.Response) -> Response[Union[Any, ValidationError]]:
+def _build_response(
+    *, client: Client, response: httpx.Response
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -62,10 +71,10 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     json_body: UpdateDataModelIn,
-) -> Response[Union[Any, ValidationError]]:
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Update Data Model
 
-     Update data model to add or remove data frames
+     Update data model information
 
     Args:
         data_model_id (str): Data model Id to update
@@ -76,7 +85,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, ValidationError]]
+        Response[Union[Any, HTTPExceptionObj, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -98,10 +107,10 @@ def sync(
     *,
     client: AuthenticatedClient,
     json_body: UpdateDataModelIn,
-) -> Optional[Union[Any, ValidationError]]:
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Update Data Model
 
-     Update data model to add or remove data frames
+     Update data model information
 
     Args:
         data_model_id (str): Data model Id to update
@@ -112,7 +121,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, ValidationError]
+        Union[Any, HTTPExceptionObj, ValidationError]
     """
 
     return sync_detailed(
@@ -127,10 +136,10 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     json_body: UpdateDataModelIn,
-) -> Response[Union[Any, ValidationError]]:
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Update Data Model
 
-     Update data model to add or remove data frames
+     Update data model information
 
     Args:
         data_model_id (str): Data model Id to update
@@ -141,7 +150,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, ValidationError]]
+        Response[Union[Any, HTTPExceptionObj, ValidationError]]
     """
 
     kwargs = _get_kwargs(
@@ -161,10 +170,10 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     json_body: UpdateDataModelIn,
-) -> Optional[Union[Any, ValidationError]]:
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
     """Update Data Model
 
-     Update data model to add or remove data frames
+     Update data model information
 
     Args:
         data_model_id (str): Data model Id to update
@@ -175,7 +184,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, ValidationError]
+        Union[Any, HTTPExceptionObj, ValidationError]
     """
 
     return (

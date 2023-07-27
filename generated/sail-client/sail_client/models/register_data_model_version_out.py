@@ -2,35 +2,27 @@ from typing import Any, Dict, List, Type, TypeVar
 
 import attr
 
-T = TypeVar("T", bound="RegisterDataModelDataframeIn")
+T = TypeVar("T", bound="RegisterDataModelVersionOut")
 
 
 @attr.s(auto_attribs=True)
-class RegisterDataModelDataframeIn:
+class RegisterDataModelVersionOut:
     """
     Attributes:
-        name (str):
-        description (str):
-        data_model_id (str):
+        id (str):
     """
 
-    name: str
-    description: str
-    data_model_id: str
+    id: str
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        name = self.name
-        description = self.description
-        data_model_id = self.data_model_id
+        id = self.id
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "name": name,
-                "description": description,
-                "data_model_id": data_model_id,
+                "id": id,
             }
         )
 
@@ -39,20 +31,14 @@ class RegisterDataModelDataframeIn:
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
         d = src_dict.copy()
-        name = d.pop("name")
+        id = d.pop("id")
 
-        description = d.pop("description")
-
-        data_model_id = d.pop("data_model_id")
-
-        register_data_model_dataframe_in = cls(
-            name=name,
-            description=description,
-            data_model_id=data_model_id,
+        register_data_model_version_out = cls(
+            id=id,
         )
 
-        register_data_model_dataframe_in.additional_properties = d
-        return register_data_model_dataframe_in
+        register_data_model_version_out.additional_properties = d
+        return register_data_model_version_out
 
     @property
     def additional_keys(self) -> List[str]:

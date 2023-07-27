@@ -5,33 +5,41 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.commit_data_model_version_in import CommitDataModelVersionIn
+from ...models.http_exception_obj import HTTPExceptionObj
 from ...models.validation_error import ValidationError
 from ...types import Response
 
 
 def _get_kwargs(
-    data_model_dataframe_id: str,
+    data_model_version_id: str,
     *,
     client: AuthenticatedClient,
+    json_body: CommitDataModelVersionIn,
 ) -> Dict[str, Any]:
-    url = "{}/data-models-dataframes/{data_model_dataframe_id}".format(
-        client.base_url, data_model_dataframe_id=data_model_dataframe_id
+    url = "{}/data-model-versions/{data_model_version_id}/commit".format(
+        client.base_url, data_model_version_id=data_model_version_id
     )
 
     headers: Dict[str, str] = client.get_headers()
     cookies: Dict[str, Any] = client.get_cookies()
 
+    json_json_body = json_body.to_dict()
+
     return {
-        "method": "delete",
+        "method": "patch",
         "url": url,
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
         "follow_redirects": client.follow_redirects,
+        "json": json_json_body,
     }
 
 
-def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Union[Any, ValidationError]]:
+def _parse_response(
+    *, client: Client, response: httpx.Response
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
     if response.status_code == HTTPStatus.NO_CONTENT:
         response_204 = cast(Any, None)
         return response_204
@@ -39,13 +47,19 @@ def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Uni
         response_422 = ValidationError.from_dict(response.json())
 
         return response_422
+    if response.status_code == HTTPStatus.BAD_REQUEST:
+        response_400 = HTTPExceptionObj.from_dict(response.json())
+
+        return response_400
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
-def _build_response(*, client: Client, response: httpx.Response) -> Response[Union[Any, ValidationError]]:
+def _build_response(
+    *, client: Client, response: httpx.Response
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -55,28 +69,31 @@ def _build_response(*, client: Client, response: httpx.Response) -> Response[Uni
 
 
 def sync_detailed(
-    data_model_dataframe_id: str,
+    data_model_version_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[Any, ValidationError]]:
-    """Delete Data Model Dataframe
+    json_body: CommitDataModelVersionIn,
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
+    """Commit Data Model
 
-     Soft delete data model dataframe
+     Commit the changes made to the current data model
 
     Args:
-        data_model_dataframe_id (str): Data model dataframe Id to delete
+        data_model_version_id (str): Data model Id to update
+        json_body (CommitDataModelVersionIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, ValidationError]]
+        Response[Union[Any, HTTPExceptionObj, ValidationError]]
     """
 
     kwargs = _get_kwargs(
-        data_model_dataframe_id=data_model_dataframe_id,
+        data_model_version_id=data_model_version_id,
         client=client,
+        json_body=json_body,
     )
 
     response = httpx.request(
@@ -88,54 +105,60 @@ def sync_detailed(
 
 
 def sync(
-    data_model_dataframe_id: str,
+    data_model_version_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[Any, ValidationError]]:
-    """Delete Data Model Dataframe
+    json_body: CommitDataModelVersionIn,
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
+    """Commit Data Model
 
-     Soft delete data model dataframe
+     Commit the changes made to the current data model
 
     Args:
-        data_model_dataframe_id (str): Data model dataframe Id to delete
+        data_model_version_id (str): Data model Id to update
+        json_body (CommitDataModelVersionIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, ValidationError]
+        Union[Any, HTTPExceptionObj, ValidationError]
     """
 
     return sync_detailed(
-        data_model_dataframe_id=data_model_dataframe_id,
+        data_model_version_id=data_model_version_id,
         client=client,
+        json_body=json_body,
     ).parsed
 
 
 async def asyncio_detailed(
-    data_model_dataframe_id: str,
+    data_model_version_id: str,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[Any, ValidationError]]:
-    """Delete Data Model Dataframe
+    json_body: CommitDataModelVersionIn,
+) -> Response[Union[Any, HTTPExceptionObj, ValidationError]]:
+    """Commit Data Model
 
-     Soft delete data model dataframe
+     Commit the changes made to the current data model
 
     Args:
-        data_model_dataframe_id (str): Data model dataframe Id to delete
+        data_model_version_id (str): Data model Id to update
+        json_body (CommitDataModelVersionIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, ValidationError]]
+        Response[Union[Any, HTTPExceptionObj, ValidationError]]
     """
 
     kwargs = _get_kwargs(
-        data_model_dataframe_id=data_model_dataframe_id,
+        data_model_version_id=data_model_version_id,
         client=client,
+        json_body=json_body,
     )
 
     async with httpx.AsyncClient(verify=client.verify_ssl) as _client:
@@ -145,28 +168,31 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    data_model_dataframe_id: str,
+    data_model_version_id: str,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[Any, ValidationError]]:
-    """Delete Data Model Dataframe
+    json_body: CommitDataModelVersionIn,
+) -> Optional[Union[Any, HTTPExceptionObj, ValidationError]]:
+    """Commit Data Model
 
-     Soft delete data model dataframe
+     Commit the changes made to the current data model
 
     Args:
-        data_model_dataframe_id (str): Data model dataframe Id to delete
+        data_model_version_id (str): Data model Id to update
+        json_body (CommitDataModelVersionIn):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, ValidationError]
+        Union[Any, HTTPExceptionObj, ValidationError]
     """
 
     return (
         await asyncio_detailed(
-            data_model_dataframe_id=data_model_dataframe_id,
+            data_model_version_id=data_model_version_id,
             client=client,
+            json_body=json_body,
         )
     ).parsed

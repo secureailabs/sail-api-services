@@ -1,28 +1,44 @@
-from typing import Any, Dict, List, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, List, Type, TypeVar
 
 import attr
 
-T = TypeVar("T", bound="RegisterDataModelSeriesOut")
+if TYPE_CHECKING:
+    from ..models.data_model_series_schema import DataModelSeriesSchema
+
+
+T = TypeVar("T", bound="DataModelSeries")
 
 
 @attr.s(auto_attribs=True)
-class RegisterDataModelSeriesOut:
+class DataModelSeries:
     """
     Attributes:
         id (str):
+        name (str):
+        description (str):
+        series_schema (DataModelSeriesSchema):
     """
 
     id: str
+    name: str
+    description: str
+    series_schema: "DataModelSeriesSchema"
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         id = self.id
+        name = self.name
+        description = self.description
+        series_schema = self.series_schema.to_dict()
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "id": id,
+                "name": name,
+                "description": description,
+                "series_schema": series_schema,
             }
         )
 
@@ -30,15 +46,26 @@ class RegisterDataModelSeriesOut:
 
     @classmethod
     def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
+        from ..models.data_model_series_schema import DataModelSeriesSchema
+
         d = src_dict.copy()
         id = d.pop("id")
 
-        register_data_model_series_out = cls(
+        name = d.pop("name")
+
+        description = d.pop("description")
+
+        series_schema = DataModelSeriesSchema.from_dict(d.pop("series_schema"))
+
+        data_model_series = cls(
             id=id,
+            name=name,
+            description=description,
+            series_schema=series_schema,
         )
 
-        register_data_model_series_out.additional_properties = d
-        return register_data_model_series_out
+        data_model_series.additional_properties = d
+        return data_model_series
 
     @property
     def additional_keys(self) -> List[str]:

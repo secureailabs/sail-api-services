@@ -12,19 +12,19 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 
-from app import main
 from app.api.authentication import RoleChecker, get_current_user
 from app.api.data_model_versions import DataModelVersion
 from app.data import operations as data_service
 from app.models.accounts import UserRole
 from app.models.authentication import TokenData
 from app.models.common import PyObjectId
-from app.models.data_model_versions import DataModelVersion_Db, DataModelVersionState
+from app.models.data_model_versions import DataModelVersionBasicInfo, DataModelVersionState
 from app.models.data_models import (
     DataModel_Db,
     DataModelState,
@@ -110,12 +110,12 @@ class DataModel:
 
     @staticmethod
     async def update(
-        data_model_id: PyObjectId,
-        organization_id: PyObjectId,
+        query_data_model_id: PyObjectId,
+        query_organization_id: PyObjectId,
         name: Optional[str] = None,
         description: Optional[str] = None,
         state: Optional[DataModelState] = None,
-        current_version_id: Optional[PyObjectId] = None,
+        current_version: Optional[DataModelVersionBasicInfo] = None,
     ):
         """
         Update a data model
@@ -135,14 +135,15 @@ class DataModel:
             update_request["$set"]["name"] = name
         if description:
             update_request["$set"]["description"] = description
-        if current_version_id:
-            update_request["$set"]["current_version_id"] = str(current_version_id)
+        if current_version:
+            update_request["$set"]["current_version_id"] = str(current_version.id)
+            update_request["$push"] = {"revision_history": current_version}
 
         update_response = await data_service.update_one(
             collection=DataModel.DB_COLLECTION_DATA_MODEL,
             query={
-                "_id": str(data_model_id),
-                "maintainer_organization_id": str(organization_id),
+                "_id": str(query_data_model_id),
+                "maintainer_organization_id": str(query_organization_id),
                 "state": {"$ne": DataModelState.DELETED.value},
             },
             data=jsonable_encoder(update_request),
@@ -150,7 +151,7 @@ class DataModel:
         if update_response.modified_count == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Data model not found. No update performed.",
+                detail=f"Data model not found OR No update performed.",
             )
 
 
@@ -267,7 +268,6 @@ async def get_all_data_model_info(
     """
     # Get the data model
     data_model_info = await DataModel.read(
-        maintainer_organization_id=current_user.organization_id,
         throw_on_not_found=False,
     )
 
@@ -284,14 +284,14 @@ async def get_all_data_model_info(
 
 
 @router.get(
-    path="/data-model/{data_model_id}/versions",
+    path="/data-model/{data_model_id}/published-versions",
     description="Get all published data model versions",
     response_description="List of all published Data model versions",
     status_code=status.HTTP_200_OK,
     response_model_by_alias=False,
-    operation_id="get_all_data_model_version_names",
+    operation_id="get_all_published_data_model_version_names",
 )
-async def get_all_data_model_version_names(
+async def get_all_published_data_model_version_names(
     data_model_id: PyObjectId,
     current_user: TokenData = Depends(get_current_user),
 ) -> Dict[PyObjectId, str]:
@@ -311,6 +311,41 @@ async def get_all_data_model_version_names(
     datamodel_db_list = await DataModelVersion.read(
         data_model_id=data_model_id,
         state=DataModelVersionState.PUBLISHED,
+        throw_on_not_found=False,
+    )
+
+    return {datamodel_db.id: datamodel_db.name for datamodel_db in datamodel_db_list}
+
+
+@router.get(
+    path="/data-model/{data_model_id}/draft-versions",
+    description="Get all draft data model versions",
+    response_description="List of all published Data model versions",
+    status_code=status.HTTP_200_OK,
+    response_model_by_alias=False,
+    operation_id="get_all_draft_data_model_version_names",
+)
+async def get_all_draft_data_model_version_names(
+    data_model_id: PyObjectId,
+    current_user: TokenData = Depends(get_current_user),
+) -> Dict[PyObjectId, str]:
+    """
+    Get data model information
+
+    :param data_model_id: Data model Id
+    :type data_model_id: PyObjectId
+    :param current_user: current user information, defaults to Depends(get_current_user)
+    :type current_user: TokenData, optional
+    :raises HTTPException: 404 if data model not found
+    :return: Data model information and list of SCNs
+    :rtype: GetDataModel
+    """
+
+    # Get the data model
+    datamodel_db_list = await DataModelVersion.read(
+        data_model_id=data_model_id,
+        user_id=current_user.id,
+        state=DataModelVersionState.DRAFT,
         throw_on_not_found=False,
     )
 
@@ -343,21 +378,35 @@ async def update_data_model(
     """
 
     # Check if the current version is a valid published version
+    basic_data_model_version = None
     if data_model_req.current_version_id:
-        await DataModelVersion.read(
+        data_model_version_list = await DataModelVersion.read(
             data_model_version_id=data_model_req.current_version_id,
             data_model_id=data_model_id,
             state=DataModelVersionState.PUBLISHED,
             throw_on_not_found=True,
         )
+        data_model_version = data_model_version_list[0]
+        if not data_model_version.commit_message:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Data model version is not published or has no commit message",
+            )
+        basic_data_model_version = DataModelVersionBasicInfo(
+            id=data_model_version.id,
+            name=data_model_version.name,
+            description=data_model_version.description,
+            commit_message=data_model_version.commit_message,
+            merge_time=datetime.utcnow(),
+        )
 
     await DataModel.update(
-        data_model_id=data_model_id,
-        organization_id=current_user.organization_id,
+        query_data_model_id=data_model_id,
+        query_organization_id=current_user.organization_id,
         name=data_model_req.name,
         description=data_model_req.description,
         state=data_model_req.state,
-        current_version_id=data_model_req.current_version_id,
+        current_version=basic_data_model_version,
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -386,7 +435,9 @@ async def delete_data_model(
     :rtype: Response
     """
     await DataModel.update(
-        data_model_id=data_model_id, organization_id=current_user.organization_id, state=DataModelState.DELETED
+        query_data_model_id=data_model_id,
+        query_organization_id=current_user.organization_id,
+        state=DataModelState.DELETED,
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

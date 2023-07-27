@@ -19,6 +19,7 @@ from typing import List, Optional
 from pydantic import Field, StrictStr
 
 from app.models.common import BasicObjectInfo, PyObjectId, SailBaseModel
+from app.models.data_model_versions import DataModelVersionBasicInfo
 
 
 class DataModelState(str, Enum):
@@ -38,6 +39,7 @@ class DataModel_Db(DataModel_Base):
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     maintainer_organization_id: PyObjectId = Field()
     current_version_id: PyObjectId = Field(default=None)
+    revision_history: List[DataModelVersionBasicInfo] = Field(default_factory=list)
     state: DataModelState = Field()
 
 
@@ -46,6 +48,7 @@ class GetDataModel_Out(DataModel_Base):
     creation_time: datetime = Field(default_factory=datetime.utcnow)
     maintainer_organization: BasicObjectInfo = Field()
     current_version_id: Optional[PyObjectId] = Field()
+    revision_history: List[DataModelVersionBasicInfo] = Field(default_factory=list)
     state: DataModelState = Field()
 
 

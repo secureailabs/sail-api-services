@@ -1,29 +1,22 @@
 from http import HTTPStatus
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.get_multiple_data_model_series_out import GetMultipleDataModelSeriesOut
-from ...models.validation_error import ValidationError
-from ...types import UNSET, Response, Unset
+from ...models.get_multiple_data_model_version_out import GetMultipleDataModelVersionOut
+from ...types import Response
 
 
 def _get_kwargs(
     *,
     client: AuthenticatedClient,
-    data_model_dataframe_id: Union[Unset, None, str] = UNSET,
 ) -> Dict[str, Any]:
-    url = "{}/data-models-series".format(client.base_url)
+    url = "{}/data-model-versions".format(client.base_url)
 
     headers: Dict[str, str] = client.get_headers()
     cookies: Dict[str, Any] = client.get_cookies()
-
-    params: Dict[str, Any] = {}
-    params["data_model_dataframe_id"] = data_model_dataframe_id
-
-    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     return {
         "method": "get",
@@ -32,30 +25,21 @@ def _get_kwargs(
         "cookies": cookies,
         "timeout": client.get_timeout(),
         "follow_redirects": client.follow_redirects,
-        "params": params,
     }
 
 
-def _parse_response(
-    *, client: Client, response: httpx.Response
-) -> Optional[Union[GetMultipleDataModelSeriesOut, ValidationError]]:
+def _parse_response(*, client: Client, response: httpx.Response) -> Optional[GetMultipleDataModelVersionOut]:
     if response.status_code == HTTPStatus.OK:
-        response_200 = GetMultipleDataModelSeriesOut.from_dict(response.json())
+        response_200 = GetMultipleDataModelVersionOut.from_dict(response.json())
 
         return response_200
-    if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-        response_422 = ValidationError.from_dict(response.json())
-
-        return response_422
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
         return None
 
 
-def _build_response(
-    *, client: Client, response: httpx.Response
-) -> Response[Union[GetMultipleDataModelSeriesOut, ValidationError]]:
+def _build_response(*, client: Client, response: httpx.Response) -> Response[GetMultipleDataModelVersionOut]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -67,26 +51,21 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    data_model_dataframe_id: Union[Unset, None, str] = UNSET,
-) -> Response[Union[GetMultipleDataModelSeriesOut, ValidationError]]:
-    """Get All Data Model Series Info
+) -> Response[GetMultipleDataModelVersionOut]:
+    """Get All Data Model Versions
 
-     Get all data model series SCNs
-
-    Args:
-        data_model_dataframe_id (Union[Unset, None, str]): Data model dataframe Id
+     Get all data model versions for the current user
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetMultipleDataModelSeriesOut, ValidationError]]
+        Response[GetMultipleDataModelVersionOut]
     """
 
     kwargs = _get_kwargs(
         client=client,
-        data_model_dataframe_id=data_model_dataframe_id,
     )
 
     response = httpx.request(
@@ -100,52 +79,42 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    data_model_dataframe_id: Union[Unset, None, str] = UNSET,
-) -> Optional[Union[GetMultipleDataModelSeriesOut, ValidationError]]:
-    """Get All Data Model Series Info
+) -> Optional[GetMultipleDataModelVersionOut]:
+    """Get All Data Model Versions
 
-     Get all data model series SCNs
-
-    Args:
-        data_model_dataframe_id (Union[Unset, None, str]): Data model dataframe Id
+     Get all data model versions for the current user
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetMultipleDataModelSeriesOut, ValidationError]
+        GetMultipleDataModelVersionOut
     """
 
     return sync_detailed(
         client=client,
-        data_model_dataframe_id=data_model_dataframe_id,
     ).parsed
 
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    data_model_dataframe_id: Union[Unset, None, str] = UNSET,
-) -> Response[Union[GetMultipleDataModelSeriesOut, ValidationError]]:
-    """Get All Data Model Series Info
+) -> Response[GetMultipleDataModelVersionOut]:
+    """Get All Data Model Versions
 
-     Get all data model series SCNs
-
-    Args:
-        data_model_dataframe_id (Union[Unset, None, str]): Data model dataframe Id
+     Get all data model versions for the current user
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GetMultipleDataModelSeriesOut, ValidationError]]
+        Response[GetMultipleDataModelVersionOut]
     """
 
     kwargs = _get_kwargs(
         client=client,
-        data_model_dataframe_id=data_model_dataframe_id,
     )
 
     async with httpx.AsyncClient(verify=client.verify_ssl) as _client:
@@ -157,26 +126,21 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    data_model_dataframe_id: Union[Unset, None, str] = UNSET,
-) -> Optional[Union[GetMultipleDataModelSeriesOut, ValidationError]]:
-    """Get All Data Model Series Info
+) -> Optional[GetMultipleDataModelVersionOut]:
+    """Get All Data Model Versions
 
-     Get all data model series SCNs
-
-    Args:
-        data_model_dataframe_id (Union[Unset, None, str]): Data model dataframe Id
+     Get all data model versions for the current user
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GetMultipleDataModelSeriesOut, ValidationError]
+        GetMultipleDataModelVersionOut
     """
 
     return (
         await asyncio_detailed(
             client=client,
-            data_model_dataframe_id=data_model_dataframe_id,
         )
     ).parsed

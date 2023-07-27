@@ -1,9 +1,10 @@
 from enum import Enum
 
 
-class DataModelSeriesState(str, Enum):
-    ACTIVE = "ACTIVE"
+class DataModelVersionState(str, Enum):
     DELETED = "DELETED"
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"
 
     def __str__(self) -> str:
         return str(self.value)

@@ -1,45 +1,46 @@
 from http import HTTPStatus
-from typing import Any, Dict, Optional, Union, cast
+from typing import Any, Dict, Optional, Union
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.update_data_model_dataframe_in import UpdateDataModelDataframeIn
+from ...models.get_all_draft_data_model_version_names_response_get_all_draft_data_model_version_names import (
+    GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames,
+)
 from ...models.validation_error import ValidationError
 from ...types import Response
 
 
 def _get_kwargs(
-    data_model_dataframe_id: str,
+    data_model_id: str,
     *,
     client: AuthenticatedClient,
-    json_body: UpdateDataModelDataframeIn,
 ) -> Dict[str, Any]:
-    url = "{}/data-models-dataframes/{data_model_dataframe_id}".format(
-        client.base_url, data_model_dataframe_id=data_model_dataframe_id
-    )
+    url = "{}/data-model/{data_model_id}/draft-versions".format(client.base_url, data_model_id=data_model_id)
 
     headers: Dict[str, str] = client.get_headers()
     cookies: Dict[str, Any] = client.get_cookies()
 
-    json_json_body = json_body.to_dict()
-
     return {
-        "method": "patch",
+        "method": "get",
         "url": url,
         "headers": headers,
         "cookies": cookies,
         "timeout": client.get_timeout(),
         "follow_redirects": client.follow_redirects,
-        "json": json_json_body,
     }
 
 
-def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Union[Any, ValidationError]]:
-    if response.status_code == HTTPStatus.NO_CONTENT:
-        response_204 = cast(Any, None)
-        return response_204
+def _parse_response(
+    *, client: Client, response: httpx.Response
+) -> Optional[Union[GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames, ValidationError]]:
+    if response.status_code == HTTPStatus.OK:
+        response_200 = GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames.from_dict(
+            response.json()
+        )
+
+        return response_200
     if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
         response_422 = ValidationError.from_dict(response.json())
 
@@ -50,7 +51,9 @@ def _parse_response(*, client: Client, response: httpx.Response) -> Optional[Uni
         return None
 
 
-def _build_response(*, client: Client, response: httpx.Response) -> Response[Union[Any, ValidationError]]:
+def _build_response(
+    *, client: Client, response: httpx.Response
+) -> Response[Union[GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames, ValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -60,31 +63,28 @@ def _build_response(*, client: Client, response: httpx.Response) -> Response[Uni
 
 
 def sync_detailed(
-    data_model_dataframe_id: str,
+    data_model_id: str,
     *,
     client: AuthenticatedClient,
-    json_body: UpdateDataModelDataframeIn,
-) -> Response[Union[Any, ValidationError]]:
-    """Update Data Model Dataframe
+) -> Response[Union[GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames, ValidationError]]:
+    """Get All Draft Data Model Version Names
 
-     Update data model dataframe
+     Get all draft data model versions
 
     Args:
-        data_model_dataframe_id (str): Data model dataframe Id
-        json_body (UpdateDataModelDataframeIn):
+        data_model_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, ValidationError]]
+        Response[Union[GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames, ValidationError]]
     """
 
     kwargs = _get_kwargs(
-        data_model_dataframe_id=data_model_dataframe_id,
+        data_model_id=data_model_id,
         client=client,
-        json_body=json_body,
     )
 
     response = httpx.request(
@@ -96,60 +96,54 @@ def sync_detailed(
 
 
 def sync(
-    data_model_dataframe_id: str,
+    data_model_id: str,
     *,
     client: AuthenticatedClient,
-    json_body: UpdateDataModelDataframeIn,
-) -> Optional[Union[Any, ValidationError]]:
-    """Update Data Model Dataframe
+) -> Optional[Union[GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames, ValidationError]]:
+    """Get All Draft Data Model Version Names
 
-     Update data model dataframe
+     Get all draft data model versions
 
     Args:
-        data_model_dataframe_id (str): Data model dataframe Id
-        json_body (UpdateDataModelDataframeIn):
+        data_model_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, ValidationError]
+        Union[GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames, ValidationError]
     """
 
     return sync_detailed(
-        data_model_dataframe_id=data_model_dataframe_id,
+        data_model_id=data_model_id,
         client=client,
-        json_body=json_body,
     ).parsed
 
 
 async def asyncio_detailed(
-    data_model_dataframe_id: str,
+    data_model_id: str,
     *,
     client: AuthenticatedClient,
-    json_body: UpdateDataModelDataframeIn,
-) -> Response[Union[Any, ValidationError]]:
-    """Update Data Model Dataframe
+) -> Response[Union[GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames, ValidationError]]:
+    """Get All Draft Data Model Version Names
 
-     Update data model dataframe
+     Get all draft data model versions
 
     Args:
-        data_model_dataframe_id (str): Data model dataframe Id
-        json_body (UpdateDataModelDataframeIn):
+        data_model_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, ValidationError]]
+        Response[Union[GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames, ValidationError]]
     """
 
     kwargs = _get_kwargs(
-        data_model_dataframe_id=data_model_dataframe_id,
+        data_model_id=data_model_id,
         client=client,
-        json_body=json_body,
     )
 
     async with httpx.AsyncClient(verify=client.verify_ssl) as _client:
@@ -159,31 +153,28 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    data_model_dataframe_id: str,
+    data_model_id: str,
     *,
     client: AuthenticatedClient,
-    json_body: UpdateDataModelDataframeIn,
-) -> Optional[Union[Any, ValidationError]]:
-    """Update Data Model Dataframe
+) -> Optional[Union[GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames, ValidationError]]:
+    """Get All Draft Data Model Version Names
 
-     Update data model dataframe
+     Get all draft data model versions
 
     Args:
-        data_model_dataframe_id (str): Data model dataframe Id
-        json_body (UpdateDataModelDataframeIn):
+        data_model_id (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, ValidationError]
+        Union[GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames, ValidationError]
     """
 
     return (
         await asyncio_detailed(
-            data_model_dataframe_id=data_model_dataframe_id,
+            data_model_id=data_model_id,
             client=client,
-            json_body=json_body,
         )
     ).parsed

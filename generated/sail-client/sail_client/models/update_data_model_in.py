@@ -15,11 +15,13 @@ class UpdateDataModelIn:
         state (Union[Unset, DataModelState]): An enumeration.
         name (Union[Unset, str]): The name of the data model
         description (Union[Unset, str]): The description of the data model
+        current_version_id (Union[Unset, str]): The current version id of the data model
     """
 
     state: Union[Unset, DataModelState] = UNSET
     name: Union[Unset, str] = UNSET
     description: Union[Unset, str] = UNSET
+    current_version_id: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -29,6 +31,7 @@ class UpdateDataModelIn:
 
         name = self.name
         description = self.description
+        current_version_id = self.current_version_id
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -39,6 +42,8 @@ class UpdateDataModelIn:
             field_dict["name"] = name
         if description is not UNSET:
             field_dict["description"] = description
+        if current_version_id is not UNSET:
+            field_dict["current_version_id"] = current_version_id
 
         return field_dict
 
@@ -56,10 +61,13 @@ class UpdateDataModelIn:
 
         description = d.pop("description", UNSET)
 
+        current_version_id = d.pop("current_version_id", UNSET)
+
         update_data_model_in = cls(
             state=state,
             name=name,
             description=description,
+            current_version_id=current_version_id,
         )
 
         update_data_model_in.additional_properties = d

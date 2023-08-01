@@ -20,9 +20,10 @@ from fastapi.encoders import jsonable_encoder
 
 import app.utils.azure as azure
 from app.api.authentication import RoleChecker, get_current_user
+from app.api.data_federations import get_all_data_federations
 from app.api.datasets import Datasets
 from app.data import operations as data_service
-from app.models.accounts import UserRole
+from app.models.accounts import User_Db, UserRole
 from app.models.authentication import TokenData
 from app.models.common import PyObjectId
 from app.models.dataset_versions import (
@@ -36,6 +37,11 @@ from app.models.dataset_versions import (
     UpdateDatasetVersion_In,
 )
 from app.models.datasets import DatasetState
+from app.models.secure_computation_nodes import (
+    RegisterSecureComputationNode_In,
+    SecureComputationNodeSize,
+    SecureComputationNodeState,
+)
 from app.utils import cache
 from app.utils.background_couroutines import add_async_task
 from app.utils.secrets import get_secret
@@ -368,6 +374,10 @@ async def update_dataset_version(
         note=updated_dataset_version_info.note,
     )
 
+    # if the dataset state was updated to ACTIVE create a new SCN with the new dataset versions
+    if updated_dataset_version_info.state == DatasetVersionState.ACTIVE:
+        add_async_task(udpate_scn(current_user))
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -433,3 +443,55 @@ async def create_directory_in_file_share(dataset_id: PyObjectId, dataset_version
             state=DatasetVersionState.ERROR,
             note=str(exception),
         )
+
+
+async def udpate_scn(current_user: TokenData):
+    from app.api.secure_computation_nodes import (
+        SecureComputationNode,
+        deprovision_secure_computation_node,
+        register_secure_computation_node,
+    )
+
+    # TODO: this is a bad implementation. There should be a better way to do it.
+    # Login as sail admin user by creating a token for sail admin user
+    found_user = await data_service.find_one("users", {"email": "admin@secureailabs.com"})
+    if not found_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin user not found")
+    found_user_db = User_Db(**found_user)
+    admin_user = TokenData(
+        _id=found_user_db.id,
+        organization_id=found_user_db.organization_id,
+        roles=found_user_db.roles,
+        exp=current_user.exp,
+    )
+
+    # Get the latest scn that's running
+    current_scn = await SecureComputationNode.read(
+        query_state=SecureComputationNodeState.READY, throw_on_not_found=False
+    )
+
+    # If it is none then create a new one
+    # If it is not none then delete it and create a new one
+    if current_scn:
+        response = await deprovision_secure_computation_node(
+            secure_computation_node_id=current_scn[0].id, current_user=admin_user
+        )
+        if response.status_code != status.HTTP_204_NO_CONTENT:
+            raise HTTPException(status_code=response.status_code, detail=response.body)
+
+    # Get the data federation id
+    data_federation = await get_all_data_federations(
+        data_submitter_id=current_user.organization_id, current_user=current_user
+    )
+    if not data_federation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Data federation not found")
+
+    # Create a new scn
+    scn_req: RegisterSecureComputationNode_In = RegisterSecureComputationNode_In(
+        data_federation_id=data_federation.data_federations[0].id,
+        size=SecureComputationNodeSize.Standard_D4s_v4,
+    )
+    response = await register_secure_computation_node(
+        secure_computation_node_req=scn_req,
+        current_user=admin_user,
+    )

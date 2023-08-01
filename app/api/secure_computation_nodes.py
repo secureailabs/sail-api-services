@@ -77,23 +77,26 @@ class SecureComputationNode:
 
     @staticmethod
     async def read(
-        secure_computation_node_id: Optional[PyObjectId] = None,
-        organization_id: Optional[PyObjectId] = None,
-        researcher_organization_id: Optional[PyObjectId] = None,
-        researcher_user_id: Optional[PyObjectId] = None,
+        query_secure_computation_node_id: Optional[PyObjectId] = None,
+        query_organization_id: Optional[PyObjectId] = None,
+        query_researcher_organization_id: Optional[PyObjectId] = None,
+        query_researcher_user_id: Optional[PyObjectId] = None,
+        query_state: Optional[SecureComputationNodeState] = None,
         throw_on_not_found: bool = True,
     ) -> List[SecureComputationNode_Db]:
         secure_computation_node_list = []
 
         query = {}
-        if secure_computation_node_id:
-            query["_id"] = str(secure_computation_node_id)
-        if organization_id:
-            query["organization_id"] = str(organization_id)
-        if researcher_organization_id:
-            query["researcher_id"] = str(researcher_organization_id)
-        if researcher_user_id:
-            query["researcher_user_id"] = str(researcher_user_id)
+        if query_secure_computation_node_id:
+            query["_id"] = str(query_secure_computation_node_id)
+        if query_organization_id:
+            query["organization_id"] = str(query_organization_id)
+        if query_researcher_organization_id:
+            query["researcher_id"] = str(query_researcher_organization_id)
+        if query_researcher_user_id:
+            query["researcher_user_id"] = str(query_researcher_user_id)
+        if query_state:
+            query["state"] = query_state.value
 
         response = await data_service.find_by_query(
             collection=SecureComputationNode.DB_COLLECTION_SECURE_COMPUTATION_NODE,
@@ -275,8 +278,9 @@ async def get_all_secure_computation_nodes(
     from app.api.data_federations import get_data_federation
 
     secure_computation_nodes = await SecureComputationNode.read(
-        researcher_organization_id=current_user.organization_id,
-        researcher_user_id=current_user.id,
+        # query_researcher_organization_id=current_user.organization_id,
+        # query_researcher_user_id=current_user.id,
+        query_state=SecureComputationNodeState.READY,
         throw_on_not_found=False,
     )
 
@@ -351,9 +355,9 @@ async def get_secure_computation_node(
     from app.api.data_federations import get_data_federation
 
     secure_computation_node = await SecureComputationNode.read(
-        secure_computation_node_id=secure_computation_node_id,
-        researcher_organization_id=current_user.organization_id,
-        researcher_user_id=current_user.id,
+        query_secure_computation_node_id=secure_computation_node_id,
+        query_researcher_organization_id=current_user.organization_id,
+        query_researcher_user_id=current_user.id,
     )
 
     # Get the basic information of the data federation
@@ -416,7 +420,9 @@ async def update_secure_computation_node(
     ),
     current_user: TokenData = Depends(get_current_user),
 ):
-    secure_computation_node_db = await SecureComputationNode.read(secure_computation_node_id=secure_computation_node_id)
+    secure_computation_node_db = await SecureComputationNode.read(
+        query_secure_computation_node_id=secure_computation_node_id
+    )
     secure_computation_node_db = secure_computation_node_db[0]
 
     new_state = secure_computation_node_db.state

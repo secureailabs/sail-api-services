@@ -12,13 +12,13 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
-from datetime import datetime
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
 from fastapi.encoders import jsonable_encoder
 
 from app.api.authentication import RoleChecker, get_current_user
+from app.api.comment_chains import CommentChain
 from app.api.data_model_versions import DataModelVersion
 from app.data import operations as data_service
 from app.models.accounts import UserRole
@@ -111,11 +111,14 @@ class DataModel:
     @staticmethod
     async def update(
         query_data_model_id: PyObjectId,
-        query_organization_id: PyObjectId,
+        query_organization_id: Optional[PyObjectId] = None,
+        query_state: Optional[DataModelState] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         state: Optional[DataModelState] = None,
         current_version: Optional[DataModelVersionBasicInfo] = None,
+        current_editor_id: Optional[PyObjectId] = None,
+        current_editor_organization_id: Optional[PyObjectId] = None,
     ):
         """
         Update a data model
@@ -131,6 +134,10 @@ class DataModel:
         update_request = {"$set": {}}
         if state:
             update_request["$set"]["state"] = state.value
+            # if state is being set to draft, there should no current editors
+            if state == DataModelState.DRAFT:
+                update_request["$set"]["current_editor_id"] = None
+                update_request["$set"]["current_editor_organization_id"] = None
         if name:
             update_request["$set"]["name"] = name
         if description:
@@ -138,14 +145,25 @@ class DataModel:
         if current_version:
             update_request["$set"]["current_version_id"] = str(current_version.id)
             update_request["$push"] = {"revision_history": current_version}
+        if current_editor_id:
+            update_request["$set"]["current_editor_id"] = str(current_editor_id)
+        if current_editor_organization_id:
+            update_request["$set"]["current_editor_organization_id"] = str(current_editor_organization_id)
+
+        update_query = {}
+        if query_data_model_id:
+            update_query["_id"] = str(query_data_model_id)
+        if query_organization_id:
+            update_query["maintainer_organization_id"] = str(query_organization_id)
+
+        if query_state:
+            update_query["state"] = query_state.value
+        else:
+            update_query["state"] = {"$ne": DataModelState.DELETED.value}
 
         update_response = await data_service.update_one(
             collection=DataModel.DB_COLLECTION_DATA_MODEL,
-            query={
-                "_id": str(query_data_model_id),
-                "maintainer_organization_id": str(query_organization_id),
-                "state": {"$ne": DataModelState.DELETED.value},
-            },
+            query=jsonable_encoder(update_query),
             data=jsonable_encoder(update_request),
         )
         if update_response.modified_count == 0:
@@ -203,6 +221,12 @@ async def register_data_model(
     # Add to the database
     await DataModel.create(data_model_db)
 
+    # Add a comment chain for the data model
+    from app.models.comment_chain import CommentChain_Db
+
+    comment_chain = CommentChain_Db(data_model_id=data_model_db.id)
+    await CommentChain.create(comment_chain)
+
     return RegisterDataModel_Out(_id=data_model_db.id)
 
 
@@ -240,6 +264,12 @@ async def get_data_model_info(
     return GetDataModel_Out(
         **(datamodel_db.dict()),
         maintainer_organization=await cache.get_basic_orgnization(datamodel_db.maintainer_organization_id),
+        current_editor=await cache.get_basic_user(datamodel_db.current_editor_id)
+        if datamodel_db.current_editor_id
+        else None,
+        current_editor_organization=await cache.get_basic_orgnization(datamodel_db.current_editor_organization_id)
+        if datamodel_db.current_editor_organization_id
+        else None,
     )
 
 
@@ -277,6 +307,10 @@ async def get_all_data_model_info(
             GetDataModel_Out(
                 **model.dict(),
                 maintainer_organization=await cache.get_basic_orgnization(model.maintainer_organization_id),
+                current_editor=await cache.get_basic_user(model.current_editor_id) if model.current_editor_id else None,
+                current_editor_organization=await cache.get_basic_orgnization(model.current_editor_organization_id)
+                if model.current_editor_organization_id
+                else None,
             )
         )
 
@@ -377,36 +411,12 @@ async def update_data_model(
     :rtype: Response
     """
 
-    # Check if the current version is a valid published version
-    basic_data_model_version = None
-    if data_model_req.current_version_id:
-        data_model_version_list = await DataModelVersion.read(
-            data_model_version_id=data_model_req.current_version_id,
-            data_model_id=data_model_id,
-            state=DataModelVersionState.PUBLISHED,
-            throw_on_not_found=True,
-        )
-        data_model_version = data_model_version_list[0]
-        if not data_model_version.commit_message:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Data model version is not published or has no commit message",
-            )
-        basic_data_model_version = DataModelVersionBasicInfo(
-            id=data_model_version.id,
-            name=data_model_version.name,
-            description=data_model_version.description,
-            commit_message=data_model_version.commit_message,
-            merge_time=datetime.utcnow(),
-        )
-
     await DataModel.update(
         query_data_model_id=data_model_id,
         query_organization_id=current_user.organization_id,
         name=data_model_req.name,
         description=data_model_req.description,
         state=data_model_req.state,
-        current_version=basic_data_model_version,
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -12,7 +12,7 @@
 #     prior written permission of Secure Ai Labs, Inc.
 # -------------------------------------------------------------------------------
 
-from datetime import datetime, time
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Response, status
@@ -36,6 +36,7 @@ from app.models.data_model_versions import (
     RegisterDataModelVersion_Out,
     SaveDataModelVersion_In,
 )
+from app.models.data_models import DataModelState
 
 router = APIRouter()
 
@@ -218,6 +219,13 @@ async def register_data_model_version(
             detail=f"Data model with id {data_model_req.data_model_id} not found",
         )
 
+    # Ensure that the data model is in a DRAFT state
+    if data_model_list[0].state != DataModelState.DRAFT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Data model with id {data_model_req.data_model_id} is not in a DRAFT state",
+        )
+
     # Previous data model version id can be null only for the first version
     if not data_model_req.previous_version_id and data_model_list[0].current_version_id:
         raise HTTPException(
@@ -259,14 +267,23 @@ async def register_data_model_version(
             )
 
     # Check if a data model version already exists with the provided name for the data model
-    data_model_list = await DataModelVersion.read(
+    data_model_version_list = await DataModelVersion.read(
         name=data_model_req.name, data_model_id=data_model_req.data_model_id, throw_on_not_found=False
     )
-    if data_model_list:
+    if data_model_version_list:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Data model with name {data_model_req.name} already exists",
         )
+
+    # Change the data model to CHECKED_OUT state
+    await DataModel.update(
+        query_data_model_id=data_model_req.data_model_id,
+        query_organization_id=data_model_list[0].maintainer_organization_id,
+        state=DataModelState.CHECKED_OUT,
+        current_editor_id=current_user.id,
+        current_editor_organization_id=current_user.organization_id,
+    )
 
     # Create a new data model version object
     data_model_db = DataModelVersion_Db(
@@ -400,6 +417,23 @@ async def commit_data_model(
         commit_message=data_model_commit_req.commit_message,
         commit_time=datetime.utcnow(),
         state=DataModelVersionState.PUBLISHED,
+    )
+
+    # Update the data model with this version
+    basic_data_model_version = DataModelVersionBasicInfo(
+        id=data_model_version.id,
+        name=data_model_version.name,
+        description=data_model_version.description,
+        commit_message=data_model_commit_req.commit_message,
+        merge_time=datetime.utcnow(),
+    )
+    from app.api.data_models import DataModel
+
+    await DataModel.update(
+        query_data_model_id=data_model_version.data_model_id,
+        query_state=DataModelState.CHECKED_OUT,
+        state=DataModelState.DRAFT,
+        current_version=basic_data_model_version,
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

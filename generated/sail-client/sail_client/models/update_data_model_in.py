@@ -16,12 +16,16 @@ class UpdateDataModelIn:
         name (Union[Unset, str]): The name of the data model
         description (Union[Unset, str]): The description of the data model
         current_version_id (Union[Unset, str]): The current version id of the data model
+        current_editor_id (Union[Unset, str]):
+        current_editor_organization_id (Union[Unset, str]):
     """
 
     state: Union[Unset, DataModelState] = UNSET
     name: Union[Unset, str] = UNSET
     description: Union[Unset, str] = UNSET
     current_version_id: Union[Unset, str] = UNSET
+    current_editor_id: Union[Unset, str] = UNSET
+    current_editor_organization_id: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -32,6 +36,8 @@ class UpdateDataModelIn:
         name = self.name
         description = self.description
         current_version_id = self.current_version_id
+        current_editor_id = self.current_editor_id
+        current_editor_organization_id = self.current_editor_organization_id
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -44,6 +50,10 @@ class UpdateDataModelIn:
             field_dict["description"] = description
         if current_version_id is not UNSET:
             field_dict["current_version_id"] = current_version_id
+        if current_editor_id is not UNSET:
+            field_dict["current_editor_id"] = current_editor_id
+        if current_editor_organization_id is not UNSET:
+            field_dict["current_editor_organization_id"] = current_editor_organization_id
 
         return field_dict
 
@@ -63,11 +73,17 @@ class UpdateDataModelIn:
 
         current_version_id = d.pop("current_version_id", UNSET)
 
+        current_editor_id = d.pop("current_editor_id", UNSET)
+
+        current_editor_organization_id = d.pop("current_editor_organization_id", UNSET)
+
         update_data_model_in = cls(
             state=state,
             name=name,
             description=description,
             current_version_id=current_version_id,
+            current_editor_id=current_editor_id,
+            current_editor_organization_id=current_editor_organization_id,
         )
 
         update_data_model_in.additional_properties = d

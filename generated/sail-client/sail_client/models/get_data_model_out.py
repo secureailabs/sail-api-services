@@ -28,6 +28,8 @@ class GetDataModelOut:
         creation_time (Union[Unset, datetime.datetime]):
         current_version_id (Union[Unset, str]):
         revision_history (Union[Unset, List['DataModelVersionBasicInfo']]):
+        current_editor (Union[Unset, BasicObjectInfo]):
+        current_editor_organization (Union[Unset, BasicObjectInfo]):
     """
 
     name: str
@@ -39,6 +41,8 @@ class GetDataModelOut:
     creation_time: Union[Unset, datetime.datetime] = UNSET
     current_version_id: Union[Unset, str] = UNSET
     revision_history: Union[Unset, List["DataModelVersionBasicInfo"]] = UNSET
+    current_editor: Union[Unset, "BasicObjectInfo"] = UNSET
+    current_editor_organization: Union[Unset, "BasicObjectInfo"] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -66,6 +70,14 @@ class GetDataModelOut:
 
                 revision_history.append(revision_history_item)
 
+        current_editor: Union[Unset, Dict[str, Any]] = UNSET
+        if not isinstance(self.current_editor, Unset):
+            current_editor = self.current_editor.to_dict()
+
+        current_editor_organization: Union[Unset, Dict[str, Any]] = UNSET
+        if not isinstance(self.current_editor_organization, Unset):
+            current_editor_organization = self.current_editor_organization.to_dict()
+
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -85,6 +97,10 @@ class GetDataModelOut:
             field_dict["current_version_id"] = current_version_id
         if revision_history is not UNSET:
             field_dict["revision_history"] = revision_history
+        if current_editor is not UNSET:
+            field_dict["current_editor"] = current_editor
+        if current_editor_organization is not UNSET:
+            field_dict["current_editor_organization"] = current_editor_organization
 
         return field_dict
 
@@ -122,6 +138,20 @@ class GetDataModelOut:
 
             revision_history.append(revision_history_item)
 
+        _current_editor = d.pop("current_editor", UNSET)
+        current_editor: Union[Unset, BasicObjectInfo]
+        if isinstance(_current_editor, Unset):
+            current_editor = UNSET
+        else:
+            current_editor = BasicObjectInfo.from_dict(_current_editor)
+
+        _current_editor_organization = d.pop("current_editor_organization", UNSET)
+        current_editor_organization: Union[Unset, BasicObjectInfo]
+        if isinstance(_current_editor_organization, Unset):
+            current_editor_organization = UNSET
+        else:
+            current_editor_organization = BasicObjectInfo.from_dict(_current_editor_organization)
+
         get_data_model_out = cls(
             name=name,
             description=description,
@@ -132,6 +162,8 @@ class GetDataModelOut:
             creation_time=creation_time,
             current_version_id=current_version_id,
             revision_history=revision_history,
+            current_editor=current_editor,
+            current_editor_organization=current_editor_organization,
         )
 
         get_data_model_out.additional_properties = d

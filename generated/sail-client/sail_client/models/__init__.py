@@ -1,5 +1,6 @@
 """ Contains all the data models used in inputs/outputs """
 
+from .add_comment_in import AddCommentIn
 from .basic_object_info import BasicObjectInfo
 from .body_login import BodyLogin
 from .commit_data_model_version_in import CommitDataModelVersionIn
@@ -22,6 +23,8 @@ from .get_all_draft_data_model_version_names_response_get_all_draft_data_model_v
 from .get_all_published_data_model_version_names_response_get_all_published_data_model_version_names import (
     GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames,
 )
+from .get_comment_chain_out import GetCommentChainOut
+from .get_comment_out import GetCommentOut
 from .get_data_federation_out import GetDataFederationOut
 from .get_data_model_out import GetDataModelOut
 from .get_data_model_version_out import GetDataModelVersionOut
@@ -83,6 +86,7 @@ from .user_role import UserRole
 from .validation_error import ValidationError
 
 __all__ = (
+    "AddCommentIn",
     "BasicObjectInfo",
     "BodyLogin",
     "CommitDataModelVersionIn",
@@ -101,6 +105,8 @@ __all__ = (
     "DatasetVersionState",
     "GetAllDraftDataModelVersionNamesResponseGetAllDraftDataModelVersionNames",
     "GetAllPublishedDataModelVersionNamesResponseGetAllPublishedDataModelVersionNames",
+    "GetCommentChainOut",
+    "GetCommentOut",
     "GetDataFederationOut",
     "GetDataModelOut",
     "GetDataModelVersionOut",

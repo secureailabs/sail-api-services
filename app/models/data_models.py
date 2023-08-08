@@ -24,6 +24,7 @@ from app.models.data_model_versions import DataModelVersionBasicInfo
 
 class DataModelState(str, Enum):
     DRAFT = "DRAFT"
+    CHECKED_OUT = "CHECKED_OUT"
     PUBLISHED = "PUBLISHED"
     DELETED = "DELETED"
 
@@ -41,6 +42,8 @@ class DataModel_Db(DataModel_Base):
     current_version_id: PyObjectId = Field(default=None)
     revision_history: List[DataModelVersionBasicInfo] = Field(default_factory=list)
     state: DataModelState = Field()
+    current_editor_id: Optional[PyObjectId] = Field(default=None)
+    current_editor_organization_id: Optional[PyObjectId] = Field(default=None)
 
 
 class GetDataModel_Out(DataModel_Base):
@@ -50,6 +53,8 @@ class GetDataModel_Out(DataModel_Base):
     current_version_id: Optional[PyObjectId] = Field()
     revision_history: List[DataModelVersionBasicInfo] = Field(default_factory=list)
     state: DataModelState = Field()
+    current_editor: Optional[BasicObjectInfo] = Field(default=None)
+    current_editor_organization: Optional[BasicObjectInfo] = Field(default=None)
 
 
 class GetMultipleDataModel_Out(SailBaseModel):
@@ -68,6 +73,3 @@ class UpdateDataModel_In(SailBaseModel):
     state: Optional[DataModelState] = Field(default=None, description="The state of the data model")
     name: Optional[StrictStr] = Field(default=None, description="The name of the data model")
     description: Optional[StrictStr] = Field(default=None, description="The description of the data model")
-    current_version_id: Optional[PyObjectId] = Field(
-        default=None, description="The current version id of the data model"
-    )

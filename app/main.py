@@ -36,6 +36,7 @@ from app.api import (
     accounts,
     audit,
     authentication,
+    comment_chains,
     data_federations,
     data_model_versions,
     data_models,
@@ -73,6 +74,7 @@ server.include_router(secure_computation_nodes.router)
 server.include_router(internal_utils.router)
 server.include_router(data_models.router)
 server.include_router(data_model_versions.router)
+server.include_router(comment_chains.router)
 
 server.add_middleware(
     CORSMiddleware,
